@@ -1,5 +1,5 @@
 // ==========================================
-// SonixAI Pricing — Provider cost + 15%
+// AragoniteAI Pricing — Provider cost + 15%
 // Every model follows the same formula.
 // ==========================================
 // MARKUP: 15%

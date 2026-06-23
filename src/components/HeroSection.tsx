@@ -67,7 +67,7 @@ export default function HeroSection() {
               }}
             >
               <div style={{ color: "rgba(255,255,255,0.4)" }} className="mb-2">
-                $ curl https://api.sonixai.dev/v1/chat/completions \
+                $ curl https://api.aragoniteai.dev/v1/chat/completions \
               </div>
               <div style={{ color: "rgba(255,255,255,0.4)" }}>
                 &nbsp;&nbsp;-H &quot;Authorization: Bearer sk-...&quot; \

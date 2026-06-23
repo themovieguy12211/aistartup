@@ -25,7 +25,7 @@ export default function ChatNavbar({ credits }: Props) {
     >
       <Container fluid>
         <BsNavbar.Brand as={Link} href="/" onClick={closeNav}>
-          <span className="navbar-brand">◆ SonixAI</span>
+          <span className="navbar-brand">◆ AragoniteAI</span>
         </BsNavbar.Brand>
 
         <BsNavbar.Toggle aria-controls="chat-nav" />

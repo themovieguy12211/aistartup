@@ -28,7 +28,7 @@ export default function CtaSection() {
             </Link>
           </div>
           <div className="mt-3" style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.85rem" }}>
-            Join 2,000+ developers already building with SonixAI
+            Join 2,000+ developers already building with AragoniteAI
           </div>
         </div>
       </Container>

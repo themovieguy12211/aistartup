@@ -168,7 +168,7 @@ export default function DashboardOverview() {
                   fontSize: "0.85rem",
                 }}
               >
-                curl https://api.sonixai.dev/v1/chat/completions \<br />
+                curl https://api.aragoniteai.dev/v1/chat/completions \<br />
                 &nbsp;&nbsp;-H &quot;Authorization: Bearer YOUR_API_KEY&quot; \<br />
                 &nbsp;&nbsp;-d &apos;{`{"model": "deepseek-chat", "messages": [{"role": "user", "content": "Hello!"}]}`}&apos;
               </div>

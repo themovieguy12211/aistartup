@@ -143,23 +143,23 @@ async function streamOne(
             reasoning += p.choices[0].delta.reasoning_content;
             if (onReasoning) onReasoning(reasoning);
           }
-          if (p.sonixai_reasoning) {
-            reasoning = p.sonixai_reasoning;
+          if (p.aragoniteai_reasoning) {
+            reasoning = p.aragoniteai_reasoning;
             if (onReasoning) onReasoning(reasoning);
           }
           // Capture function calling events as reasoning
-          if (p.sonixai_tool_call) {
-            const tc = `🔧 Calling ${p.sonixai_tool_call.name}(${Object.values(p.sonixai_tool_call.args || {}).join(", ")})...`;
+          if (p.aragoniteai_tool_call) {
+            const tc = `🔧 Calling ${p.aragoniteai_tool_call.name}(${Object.values(p.aragoniteai_tool_call.args || {}).join(", ")})...`;
             reasoning = reasoning ? reasoning + "\n" + tc : tc;
             if (onReasoning) onReasoning(reasoning);
           }
-          if (p.sonixai_tool_result) {
-            const tr = `   ✓ ${p.sonixai_tool_result.name} complete`;
+          if (p.aragoniteai_tool_result) {
+            const tr = `   ✓ ${p.aragoniteai_tool_result.name} complete`;
             reasoning = reasoning ? reasoning + "\n" + tr : tr;
             if (onReasoning) onReasoning(reasoning);
           }
-          if (p.sonixai_tool) {
-            const tt = `🔧 ${p.sonixai_tool.name}: ${p.sonixai_tool.result?.slice(0, 100) || ""}...`;
+          if (p.aragoniteai_tool) {
+            const tt = `🔧 ${p.aragoniteai_tool.name}: ${p.aragoniteai_tool.result?.slice(0, 100) || ""}...`;
             reasoning = reasoning ? reasoning + "\n" + tt : tt;
             if (onReasoning) onReasoning(reasoning);
           }

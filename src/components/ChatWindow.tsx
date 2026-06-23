@@ -47,7 +47,7 @@ export default function ChatWindow({ messages, title }: Props) {
         <span className="d-inline-block rounded-circle me-2" style={{ width: "10px", height: "10px", background: "#eab308" }} />
         <span className="d-inline-block rounded-circle me-3" style={{ width: "10px", height: "10px", background: "#22c55e" }} />
         <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: "rgba(255,255,255,0.25)" }}>
-          {title || "sonixai ~ chat"} — bash — 80×24
+          {title || "aragoniteai ~ chat"} — bash — 80×24
         </span>
       </div>
 
@@ -57,7 +57,7 @@ export default function ChatWindow({ messages, title }: Props) {
           <div className="d-flex align-items-center justify-content-center h-100" style={{ color: "rgba(255,255,255,0.2)" }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", textAlign: "center" }}>
               <div style={{ fontSize: "1.5rem", color: "rgba(255,255,255,0.12)" }}>◆</div>
-              <div style={{ color: "rgba(255,255,255,0.15)" }}>SonixAI Terminal v1.0</div>
+              <div style={{ color: "rgba(255,255,255,0.15)" }}>AragoniteAI Terminal v1.0</div>
               <div style={{ color: "rgba(255,255,255,0.1)" }}>Select models above. Use |&gt; for pipeline.</div>
               <div style={{ color: "rgba(255,255,255,0.2)", marginTop: "12px" }}>
                 $ <span style={{ color: "#22c55e" }}>▋</span>

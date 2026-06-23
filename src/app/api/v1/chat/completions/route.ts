@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     await supabase.from("usage_records").insert({ model: usedModel, provider: usedProvider, tokens_in: tokensIn, tokens_out: tokensOut, cost, api_key_id: apiKey.id, user_id: profile.id });
 
     const pricing = getModelPricing(model);
-    data.sonixai = { model: usedModel, provider: usedProvider, cost: `$${cost.toFixed(6)}`, rate: `$${pricing.pricePerMIn}/M in, $${pricing.pricePerMOut}/M out`, credits_remaining: newCredits, latency_ms: Date.now() - startTime };
+    data.aragoniteai = { model: usedModel, provider: usedProvider, cost: `$${cost.toFixed(6)}`, rate: `$${pricing.pricePerMIn}/M in, $${pricing.pricePerMOut}/M out`, credits_remaining: newCredits, latency_ms: Date.now() - startTime };
 
     return Response.json(data);
   } catch (e) {
