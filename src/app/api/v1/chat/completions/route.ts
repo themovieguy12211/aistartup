@@ -5,12 +5,16 @@ import { apiRateLimit } from "@/lib/rate-limit";
 import crypto from "crypto";
 
 function getProviderConfig(model: string) {
+  // DeepSeek V4 models — route to DeepSeek API
+  if (model.startsWith("deepseek-v4")) {
+    return { endpoint: "https://api.deepseek.com/v1/chat/completions", apiKey: process.env.DEEPSEEK_API_KEY || "", modelParam: model, provider: "deepseek" };
+  }
   if (model.startsWith("claude-")) {
-    return {
-      endpoint: "https://bedrock-runtime.us-east-1.amazonaws.com",
-      apiKey: "", modelParam: model, provider: "bedrock",
-      fallback: { endpoint: "https://api.deepseek.com/v1/chat/completions", apiKey: process.env.DEEPSEEK_API_KEY || "", modelParam: "deepseek-chat", provider: "deepseek" },
-    };
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    if (anthropicKey) {
+      return { endpoint: "https://api.anthropic.com/v1/messages", apiKey: anthropicKey, modelParam: model, provider: "anthropic" };
+    }
+    return { endpoint: "https://api.deepseek.com/v1/chat/completions", apiKey: process.env.DEEPSEEK_API_KEY || "", modelParam: "deepseek-chat", provider: "deepseek" };
   }
   if (model.startsWith("llama-")) {
     return { endpoint: "https://api.deepseek.com/v1/chat/completions", apiKey: process.env.DEEPSEEK_API_KEY || "", modelParam: "deepseek-chat", provider: "deepseek" };
@@ -53,14 +57,14 @@ export async function POST(req: NextRequest) {
     try {
       providerRes = await fetch(config.endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.apiKey}` }, body: JSON.stringify({ model: config.modelParam, messages, stream }) });
       usedProvider = config.provider; usedModel = config.modelParam;
-      if (!providerRes.ok && config.fallback) {
-        providerRes = await fetch(config.fallback.endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.fallback.apiKey}` }, body: JSON.stringify({ model: config.fallback.modelParam, messages, stream }) });
-        usedProvider = config.fallback.provider; usedModel = config.fallback.modelParam;
+      if (!providerRes.ok && (config as any).fallback) {
+        providerRes = await fetch((config as any).fallback.endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${(config as any).fallback.apiKey}` }, body: JSON.stringify({ model: (config as any).fallback.modelParam, messages, stream }) });
+        usedProvider = (config as any).fallback.provider; usedModel = (config as any).fallback.modelParam;
       }
     } catch {
-      if (config.fallback) {
-        providerRes = await fetch(config.fallback.endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.fallback.apiKey}` }, body: JSON.stringify({ model: config.fallback.modelParam, messages, stream }) });
-        usedProvider = config.fallback.provider; usedModel = config.fallback.modelParam;
+      if ((config as any).fallback) {
+        providerRes = await fetch((config as any).fallback.endpoint, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${(config as any).fallback.apiKey}` }, body: JSON.stringify({ model: (config as any).fallback.modelParam, messages, stream }) });
+        usedProvider = (config as any).fallback.provider; usedModel = (config as any).fallback.modelParam;
       } else throw new Error("Provider failed");
     }
 

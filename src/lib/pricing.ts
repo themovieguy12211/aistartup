@@ -37,16 +37,23 @@ const BASE: Record<string, { name: string; provider: string; in: number; out: nu
     in: 0.55,
     out: 2.19,
     ctx: 128000,
-    features: ["chat", "reasoning", "streaming"],
+    features: ["chat", "🧠 reasoning", "streaming"],
   },
-  "deepseek-v4": {
-    name: "DeepSeek V4",
+  "deepseek-v4-pro": {
+    name: "DeepSeek V4 Pro",
     provider: "deepseek",
-    in: 0.50,
-    out: 2.00,
+    in: 0.435,
+    out: 0.87,
     ctx: 1000000,
-    features: ["chat", "1M context", "streaming"],
-    comingSoon: true,
+    features: ["chat", "1M ctx", "🧠 reasoning", "streaming"],
+  },
+  "deepseek-v4-flash": {
+    name: "DeepSeek V4 Flash",
+    provider: "deepseek",
+    in: 0.15,
+    out: 0.40,
+    ctx: 1000000,
+    features: ["chat", "1M ctx", "speed", "streaming"],
   },
   "claude-opus-4-8": {
     name: "Claude Opus 4.8",
@@ -54,7 +61,7 @@ const BASE: Record<string, { name: string; provider: string; in: number; out: nu
     in: 15.0,
     out: 75.0,
     ctx: 200000,
-    features: ["chat", "streaming", "vision", "best"],
+    features: ["chat", "🧠 thinking", "vision", "best"],
     bedrock: true,
   },
   "claude-sonnet-4-6": {
@@ -63,7 +70,7 @@ const BASE: Record<string, { name: string; provider: string; in: number; out: nu
     in: 3.0,
     out: 15.0,
     ctx: 200000,
-    features: ["chat", "streaming", "vision"],
+    features: ["chat", "🧠 thinking", "vision"],
     bedrock: true,
   },
   "claude-haiku-4-5": {
@@ -72,7 +79,7 @@ const BASE: Record<string, { name: string; provider: string; in: number; out: nu
     in: 0.8,
     out: 4.0,
     ctx: 200000,
-    features: ["chat", "streaming", "vision"],
+    features: ["chat", "🧠 thinking", "vision"],
     bedrock: true,
   },
   "llama-4-maverick": {

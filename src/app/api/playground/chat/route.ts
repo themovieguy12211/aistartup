@@ -5,6 +5,8 @@ import { createServerSupabase } from "@/lib/supabase-server";
 const CONFIG: Record<string, { endpoint: string; apiKey: string; modelParam: string }> = {
   "deepseek-chat": { endpoint: "https://api.deepseek.com/v1/chat/completions", apiKey: process.env.DEEPSEEK_API_KEY || "", modelParam: "deepseek-chat" },
   "deepseek-reasoner": { endpoint: "https://api.deepseek.com/v1/chat/completions", apiKey: process.env.DEEPSEEK_API_KEY || "", modelParam: "deepseek-reasoner" },
+  "deepseek-v4-pro": { endpoint: "https://api.deepseek.com/v1/chat/completions", apiKey: process.env.DEEPSEEK_API_KEY || "", modelParam: "deepseek-v4-pro" },
+  "deepseek-v4-flash": { endpoint: "https://api.deepseek.com/v1/chat/completions", apiKey: process.env.DEEPSEEK_API_KEY || "", modelParam: "deepseek-v4-flash" },
   default: { endpoint: "https://api.deepseek.com/v1/chat/completions", apiKey: process.env.DEEPSEEK_API_KEY || "", modelParam: "deepseek-chat" },
 };
 

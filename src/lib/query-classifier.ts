@@ -43,6 +43,10 @@ export function shouldSearchWeb(query: string): boolean {
   // Medium-length questions with question marks → probably needs search
   if (q.includes("?") && q.length > 30) return true;
 
+  // Creative/generative queries that need factual verification
+  if (/\b(check|verify|validate|confirm|look up|search|find out|is there|are there|does|exist|available|taken|real|legit)\b/i.test(q)) return true;
+  if (/\b(name|domain|trademark|company|startup|brand)\b/i.test(q) && q.length > 20) return true;
+
   // Default: skip search for conversation, enable for longer queries
   return q.length > 100;
 }

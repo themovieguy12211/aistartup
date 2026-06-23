@@ -5,6 +5,15 @@ import ConversationSidebar from "@/components/ConversationSidebar";
 import ChatWindow from "@/components/ChatWindow";
 import ChatInput from "@/components/ChatInput";
 import { shouldSearchWeb, shouldDeepResearch } from "@/lib/query-classifier";
+import { routeModel } from "@/lib/model-router";
+
+function mergeReasoning(existing: string[], modelReasoning: string): string[] {
+  if (!modelReasoning) return existing;
+  const truncated = modelReasoning.length > 2000
+    ? modelReasoning.slice(0, 2000) + "..."
+    : modelReasoning;
+  return [...existing, `💭 ${truncated}`];
+}
 
 interface CompareResponse {
   model: string;
@@ -89,7 +98,7 @@ async function fetchResearch(
     if (data.fetchedPages?.length) {
       ctx += "\n\n[Full page content:\n";
       for (const fp of data.fetchedPages) {
-        ctx += `\n## ${fp.title}\nURL: ${fp.url}\n\n${fp.content.slice(0, 3000)}\n`;
+        ctx += `\n## ${fp.title}\nURL: ${fp.url}\n\n${fp.content.slice(0, 6000)}\n`;
       }
       ctx += "]\n";
     }
@@ -105,7 +114,10 @@ async function fetchResearch(
   }
 }
 
-async function streamOne(model: string, content: string, convId: string | null): Promise<string> {
+async function streamOne(
+  model: string, content: string, convId: string | null,
+  onReasoning?: (r: string) => void
+): Promise<{ text: string; reasoning: string }> {
   if (!convId) throw new Error("No conversation");
   const res = await fetch(`/api/conversations/${convId}/messages`, {
     method: "POST",
@@ -117,6 +129,7 @@ async function streamOne(model: string, content: string, convId: string | null):
   if (!reader) throw new Error("No stream");
   const decoder = new TextDecoder();
   let full = "";
+  let reasoning = "";
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -126,11 +139,35 @@ async function streamOne(model: string, content: string, convId: string | null):
         try {
           const p = JSON.parse(line.slice(6));
           if (p.choices?.[0]?.delta?.content) full += p.choices[0].delta.content;
+          if (p.choices?.[0]?.delta?.reasoning_content) {
+            reasoning += p.choices[0].delta.reasoning_content;
+            if (onReasoning) onReasoning(reasoning);
+          }
+          if (p.sonixai_reasoning) {
+            reasoning = p.sonixai_reasoning;
+            if (onReasoning) onReasoning(reasoning);
+          }
+          // Capture function calling events as reasoning
+          if (p.sonixai_tool_call) {
+            const tc = `🔧 Calling ${p.sonixai_tool_call.name}(${Object.values(p.sonixai_tool_call.args || {}).join(", ")})...`;
+            reasoning = reasoning ? reasoning + "\n" + tc : tc;
+            if (onReasoning) onReasoning(reasoning);
+          }
+          if (p.sonixai_tool_result) {
+            const tr = `   ✓ ${p.sonixai_tool_result.name} complete`;
+            reasoning = reasoning ? reasoning + "\n" + tr : tr;
+            if (onReasoning) onReasoning(reasoning);
+          }
+          if (p.sonixai_tool) {
+            const tt = `🔧 ${p.sonixai_tool.name}: ${p.sonixai_tool.result?.slice(0, 100) || ""}...`;
+            reasoning = reasoning ? reasoning + "\n" + tt : tt;
+            if (onReasoning) onReasoning(reasoning);
+          }
         } catch {}
       }
     }
   }
-  return full;
+  return { text: full, reasoning };
 }
 
 export default function ChatInterface({ credits, onCreditsChange }: Props) {
@@ -190,7 +227,11 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
     models: string[], content: string, webSearch: boolean, deepResearch: boolean, pipeModel?: string
   ) {
     sendingRef.current = true;
-    const firstModel = models[0];
+
+    // Smart model routing — pick the best model for this query
+    const route = routeModel(content, models);
+    const firstModel = route.model;
+    const systemPrompt = route.systemPrompt;
 
     // Auto-create conversation
     let targetId = activeId;
@@ -212,8 +253,8 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
     }
 
     // Smart web search — only search when the query actually needs it
-    const actuallySearch = webSearch && shouldSearchWeb(content);
-    const actuallyDeep = actuallySearch && deepResearch && shouldDeepResearch(content);
+    const actuallyDeep = deepResearch && shouldDeepResearch(content);
+    const actuallySearch = webSearch && (shouldSearchWeb(content) || actuallyDeep);
     let searchContext = "";
     const reasoningSteps: string[] = [];
     if (actuallySearch) {
@@ -238,7 +279,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
     }
     // Collect reasoning steps for collapsible display
     const reasoning = [...reasoningSteps];
-    const promptWithSearch = searchContext ? content + searchContext : content;
+    const fullPrompt = `[System: ${systemPrompt}]\n\n${content}${searchContext}`;
 
     setLoading(true);
 
@@ -262,7 +303,8 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
         };
         setMessages((prev) => [...prev, msgA]);
 
-        const contentA = await streamOne(firstModel, promptWithSearch, targetId);
+        const { text: contentA, reasoning: rA } = await streamOne(firstModel, fullPrompt, targetId);
+        const pipeReasoning = mergeReasoning([...reasoning], rA);
 
         // Update with model A response
         setMessages((prev) => {
@@ -290,7 +332,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
         };
         setMessages((prev) => [...prev, msgB]);
 
-        const contentB = await streamOne(pipeModel, reviewPrompt, targetId);
+        const { text: contentB, reasoning: rB } = await streamOne(pipeModel, reviewPrompt, targetId);
 
         setMessages((prev) => {
           const copy = [...prev];
@@ -325,7 +367,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
 
         // Fire all in parallel
         const promises = models.map((m) =>
-          streamOne(m, promptWithSearch, targetId).then((result) => ({ model: m, content: result }))
+          streamOne(m, fullPrompt, targetId).then((r) => ({ model: m, content: r.text }))
         );
 
         // Stream updates — update as each resolves
@@ -356,7 +398,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
         const assistantMsg: Message = { role: "assistant", content: "", model: firstModel, reasoning };
         setMessages((prev) => [...prev, assistantMsg]);
 
-        const result = await streamOne(firstModel, promptWithSearch, targetId);
+        const { text: result, reasoning: rSingle } = await streamOne(firstModel, fullPrompt, targetId);
 
         setMessages((prev) => {
           const copy = [...prev];
@@ -433,59 +475,74 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
               return copy;
             });
 
-            // Run verification searches (3 at a time to be fast)
-            const results: { name: string; available: boolean; evidence: string }[] = [];
-            for (let i = 0; i < items.length; i += 3) {
-              const batch = items.slice(i, i + 3);
+            // Run aggressive verification searches
+            const results: { name: string; available: boolean; evidence: string; titles: string }[] = [];
+            for (let i = 0; i < items.length; i += 2) {
+              const batch = items.slice(i, i + 2);
               const batchResults = await Promise.all(
                 batch.map(async (name) => {
                   try {
-                    const r = await fetch(`/api/search?q=${encodeURIComponent(`"${name}" AI`)}`);
-                    if (r.ok) {
-                      const d = await r.json();
-                      const snippets = (d.results || []).map((s: { snippet: string; title: string }) => s.title + " " + s.snippet).join(" ");
-                      // Check if the name appears as an existing AI product/company
-                      const nameRegex = new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
-                      const mentions = snippets.match(nameRegex);
-                      // Available = no strong mentions of this as an AI company
-                      const available = !mentions || mentions.length <= 1;
-                      return { name, available, evidence: snippets.slice(0, 400) };
-                    }
-                  } catch {}
-                  return { name, available: true, evidence: "" };
+                    // Aggressive search: check if name exists as a company
+                    const q = `"${name}" startup OR company OR SaaS OR .ai OR .com`;
+                    const r = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+                    if (!r.ok) return { name, available: true, evidence: "", titles: "" };
+                    const d = await r.json();
+                    const titles = (d.results || []).slice(0, 5).map((s: { title: string }) => s.title).join(" | ");
+                    const snippets = (d.results || []).slice(0, 5).map((s: { snippet: string }) => s.snippet).join(" ");
+
+                    // Check if any search result title looks like an existing company
+                    const companyIndicators = /(is an?|platform|company|startup|product|tool|app|software|solution|service|customer|pricing|features|team|about us|blog)/i;
+                    const hasCompanyIndicators = companyIndicators.test(titles + " " + snippets);
+                    const namePattern = new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+                    const nameMentions = (titles + snippets).match(namePattern);
+                    const mentionCount = nameMentions ? nameMentions.length : 0;
+
+                    // Available = no company-like pages mentioning this name
+                    const available = !hasCompanyIndicators || mentionCount <= 2;
+                    return { name, available, evidence: snippets.slice(0, 300), titles: titles.slice(0, 300) };
+                  } catch {
+                    return { name, available: true, evidence: "", titles: "" };
+                  }
                 })
               );
               results.push(...batchResults);
-              verifySteps.push(`checked ${Math.min(i + 3, items.length)}/${items.length}...`);
+              verifySteps.push(`verified ${Math.min(i + 2, items.length)}/${items.length}...`);
             }
 
-            // Build verification context
-            const verifiedCtx = results
-              .map((r) => `- ${r.name}: ${r.available ? "LIKELY AVAILABLE" : "TAKEN — " + r.evidence.slice(0, 100)}`)
-              .join("\n");
+            // Build definitive verification context
+            const availableNames = results.filter((r) => r.available).map((r) => r.name);
+            const takenNames = results.filter((r) => !r.available);
 
-            const verificationPrompt = `You are an AI startup name verifier. Here is your task:
+            const verifiedCtx =
+              `DEFINITIVE VERIFICATION RESULTS (live web search):\n\n` +
+              `✅ LIKELY AVAILABLE (no existing company found):\n` +
+              (availableNames.length > 0 ? availableNames.map((n) => `- ${n}`).join("\n") : "- none") +
+              `\n\n❌ TAKEN (existing company/product found):\n` +
+              (takenNames.length > 0
+                ? takenNames.map((r) => `- ${r.name}: ${r.titles.slice(0, 150)}`).join("\n")
+                : "- none") +
+              `\n\nEVIDENCE FROM SEARCHES:\n` +
+              results.map((r) => `${r.available ? "✅" : "❌"} ${r.name}: ${r.titles || "no company found"}`).join("\n");
 
-ORIGINAL RESPONSE:
-${result}
+            const verificationPrompt = `WEB SEARCH VERIFICATION COMPLETE. These results come from LIVE web searches, not your training data.
 
-WEB VERIFICATION RESULTS (from live searches):
 ${verifiedCtx}
 
-INSTRUCTIONS:
-1. Go through EACH name from the original response.
-2. If web results show it's taken → mark ❌ TAKEN and say what it is.
-3. If web results show NO matches → mark ✅ LIKELY AVAILABLE.
-4. If you found 1-2 weak mentions → mark ⚠️ UNCERTAIN.
-5. Always cite the evidence from the verification results.
-6. Give a final ranked list of the best available names.
-7. Do NOT tell the user to verify themselves — you are the verifier.
-8. Be definitive. No hedging. State what the search results show.`;
+ORIGINAL LIST YOU GENERATED:
+${result}
+
+TASK: Rewrite your response using ONLY these verified results. You MUST:
+1. List each name with ✅ (available), ❌ (taken), or ⚠️ (unclear) based on the evidence ABOVE — not your training data.
+2. For taken names: state EXACTLY what existing company/product was found.
+3. For available names: say they appear free based on web searches.
+4. Give a ranked top-5 of the best available names.
+5. DO NOT say "I can't check" or "you should verify yourself." The verification is already done above.
+6. DO NOT hedge. These results are from live searches. Report them.`;
 
             verifySteps.push(`synthesizing verified answer...`);
 
             // Second model pass for verified synthesis
-            const refinedResult = await streamOne(firstModel, verificationPrompt, targetId);
+            const { text: refinedResult, reasoning: rRefined } = await streamOne(firstModel, verificationPrompt, targetId);
 
             verifySteps.push(`${results.filter((r) => r.available).length}/${results.length} names available ✓`);
 

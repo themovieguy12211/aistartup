@@ -1,17 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-function getEnvOrThrow() {
+function getEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) {
-    throw new Error("Missing Supabase env vars. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local");
-  }
-  return { url, key };
+  return { url: url || "", key: key || "" };
 }
 
 export async function createServerSupabase() {
-  const { url, key } = getEnvOrThrow();
+  const { url, key } = getEnv();
+  if (!url || !key) {
+    console.warn("Supabase not configured — auth will not work until env vars are set");
+    // Return a client that will fail gracefully at runtime
+    return createServerClient("http://localhost", "dummy", { cookies: { getAll() { return []; }, setAll() {} } });
+  }
   const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

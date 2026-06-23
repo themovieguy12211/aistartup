@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MODELS } from "@/lib/pricing";
 
-const QUICK_MODELS = ["deepseek-chat", "deepseek-reasoner", "claude-sonnet-4-6", "claude-haiku-4-5", "claude-opus-4-8", "llama-4-maverick"];
+const QUICK_MODELS = ["deepseek-v4-pro", "deepseek-v4-flash", "deepseek-reasoner", "deepseek-chat", "claude-sonnet-4-6", "claude-opus-4-8"];
 const GUEST_MODELS = ["deepseek-chat", "deepseek-reasoner"];
 
 interface Props {

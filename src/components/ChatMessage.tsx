@@ -58,7 +58,7 @@ export default function ChatMessage({ role, content, model, cost, reasoning }: P
               fontSize: "0.7rem",
             }}
           >
-            {showReasoning ? "▼" : "▶"} Sources & verification ({reasoning.length} step{reasoning.length !== 1 ? "s" : ""})
+            {showReasoning ? "▼" : "▶"} Thought process ({reasoning.length} step{reasoning.length !== 1 ? "s" : ""})
           </button>
           {showReasoning && (
             <div

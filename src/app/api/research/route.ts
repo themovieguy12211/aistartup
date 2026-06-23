@@ -35,7 +35,7 @@ function isGitHubUrl(url: string): { owner: string; repo: string } | null {
   return match ? { owner: match[1], repo: match[2].replace(/\.git$/, "") } : null;
 }
 
-function stripHtml(html: string, maxLen = 8000): string {
+function stripHtml(html: string, maxLen = 10000): string {
   let text = html
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
@@ -62,23 +62,40 @@ function extractTitle(html: string): string {
   return match ? match[1].trim() : "Untitled";
 }
 
-async function fetchPage(url: string): Promise<{ title: string; content: string } | null> {
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 8000);
-    const res = await fetch(url, {
-      signal: ctrl.signal,
-      headers: { "User-Agent": "SonixAI-Research/1.0" },
-    });
-    clearTimeout(t);
-    if (!res.ok) return null;
-    const html = await res.text();
-    const content = stripHtml(html);
-    if (content.length < 80) return null;
-    return { title: extractTitle(html), content };
-  } catch {
-    return null;
+async function fetchPage(url: string, retries = 1): Promise<{ title: string; content: string } | null> {
+  const userAgents = [
+    "Mozilla/5.0 (compatible; SonixAI/1.0; +https://sonixai.dev)",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  ];
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 12000);
+      const ua = userAgents[attempt % userAgents.length];
+      const res = await fetch(url, {
+        signal: ctrl.signal,
+        headers: {
+          "User-Agent": ua,
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      });
+      clearTimeout(t);
+
+      if (!res.ok) continue;
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("text/html") && !contentType.includes("application/xhtml")) continue;
+
+      const html = await res.text();
+      const content = stripHtml(html);
+      if (content.length < 150) continue; // too short = paywall or JS-only page
+      return { title: extractTitle(html), content };
+    } catch {
+      continue;
+    }
   }
+  return null;
 }
 
 async function fetchGitHubRepo(owner: string, repo: string): Promise<GitHubInfo | null> {
@@ -188,7 +205,7 @@ export async function GET(req: NextRequest) {
       steps.push(`fetching ${nonGitHubUrls.length} linked page(s)...`);
       const directFetches = await Promise.all(
         nonGitHubUrls.slice(0, 3).map(async (url) => {
-          const page = await fetchPage(url);
+          const page = await fetchPage(url, 1);
           return page ? { url, title: page.title, content: page.content } : null;
         })
       );
@@ -217,11 +234,11 @@ export async function GET(req: NextRequest) {
 
     // 4. Deep research — fetch top pages
     if (deep && data.searchResults.length > 0) {
-      steps.push(`reading top ${Math.min(3, data.searchResults.length)} sources...`);
-      const top = data.searchResults.slice(0, 3);
+      steps.push(`reading top ${Math.min(5, data.searchResults.length)} sources (full page)...`);
+      const top = data.searchResults.slice(0, 5);
       const pages = await Promise.all(
         top.map(async (r) => {
-          const page = await fetchPage(r.url);
+          const page = await fetchPage(r.url, 1);
           return page ? { url: r.url, title: page.title, content: page.content } : null;
         })
       );
