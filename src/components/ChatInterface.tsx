@@ -5,7 +5,6 @@ import ConversationSidebar from "@/components/ConversationSidebar";
 import ChatWindow from "@/components/ChatWindow";
 import ChatInput from "@/components/ChatInput";
 import { shouldSearchWeb, shouldDeepResearch } from "@/lib/query-classifier";
-import { routeModel } from "@/lib/model-router";
 
 function mergeReasoning(existing: string[], modelReasoning: string): string[] {
   if (!modelReasoning) return existing;
@@ -228,10 +227,8 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
   ) {
     sendingRef.current = true;
 
-    // Smart model routing — pick the best model for this query
-    const route = routeModel(content, models);
-    const firstModel = route.model;
-    const systemPrompt = route.systemPrompt;
+    // Use the model the user selected — the toggle bar IS the model choice
+    const firstModel = models[0];
 
     // Auto-create conversation
     let targetId = activeId;
@@ -279,7 +276,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
     }
     // Collect reasoning steps for collapsible display
     const reasoning = [...reasoningSteps];
-    const fullPrompt = `[System: ${systemPrompt}]\n\n${content}${searchContext}`;
+    const fullPrompt = searchContext ? `${content}${searchContext}` : content;
 
     setLoading(true);
 

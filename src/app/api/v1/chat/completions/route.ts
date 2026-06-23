@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createServerSupabase } from "@/lib/supabase-server";
+import { createServiceSupabase } from "@/lib/supabase-server";
 import { calculateCost, getModelPricing } from "@/lib/pricing";
 import { apiRateLimit } from "@/lib/rate-limit";
 import crypto from "crypto";
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const rawKey = authHeader.slice(7);
     const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
 
-    const supabase = await createServerSupabase();
+    const supabase = await createServiceSupabase();
     const { data: apiKey } = await supabase.from("api_keys").select("*, profiles!inner(*)").eq("hash", keyHash).single();
 
     if (!apiKey || !apiKey.is_active) return Response.json({ error: "Invalid API key" }, { status: 401 });

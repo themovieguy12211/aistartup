@@ -242,10 +242,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           await supabase.from("profiles").update({ credits: newCredits < 0 ? 0 : newCredits }).eq("id", user.id);
           await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", id);
 
-          // Auto-title
+          // Auto-title — strip system prompt if present
           const { count } = await supabase.from("messages").select("*", { count: "exact", head: true }).eq("conversation_id", id);
           if ((count || 0) <= 2) {
-            const title = content.trim().slice(0, 40) + (content.trim().length > 40 ? "..." : "");
+            const cleanContent = content.trim().replace(/^\[System:[^\]]*\]\s*\n*/g, "");
+            const title = cleanContent.slice(0, 40) + (cleanContent.length > 40 ? "..." : "");
             await supabase.from("conversations").update({ title }).eq("id", id);
           }
 
