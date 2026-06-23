@@ -10,11 +10,11 @@ import crypto from "crypto";
 async function forwardToProvider(model: string, body: Record<string, unknown>) {
   // DeepSeek models → use DeepSeek API (supports Anthropic format natively)
   if (model.startsWith("deepseek-") || model === "deepseek-chat" || model === "deepseek-reasoner") {
-    const res = await fetch("https://api.deepseek.com/v1/messages", {
+    const res = await fetch("https://api.deepseek.com/anthropic/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY || ""}`,
+        "x-api-key": process.env.DEEPSEEK_API_KEY || "",
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({ ...body, model }),
@@ -22,31 +22,29 @@ async function forwardToProvider(model: string, body: Record<string, unknown>) {
     return { res, provider: "deepseek", usedModel: model };
   }
 
-  // Claude, Llama, Mistral → AWS Bedrock when configured (credit-covered)
-  // Bedrock requires AWS SDK integration — coming when you get your credits
-  // For now, these models fall back to DeepSeek
+  // Claude, Llama, Mistral — fall back to DeepSeek V4 Pro
   if (model.startsWith("claude-") || model.startsWith("llama-") || model.startsWith("mistral-")) {
-    const res = await fetch("https://api.deepseek.com/v1/messages", {
+    const res = await fetch("https://api.deepseek.com/anthropic/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY || ""}`,
+        "x-api-key": process.env.DEEPSEEK_API_KEY || "",
         "anthropic-version": "2023-06-01",
       },
-      body: JSON.stringify({ ...body, model: "deepseek-chat" }),
+      body: JSON.stringify({ ...body, model: "deepseek-v4-pro" }),
     });
     return { res, provider: "deepseek", usedModel: "deepseek-v4-pro" };
   }
 
   // Default → DeepSeek
-  const res = await fetch("https://api.deepseek.com/v1/messages", {
+  const res = await fetch("https://api.deepseek.com/anthropic/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY || ""}`,
+      "x-api-key": process.env.DEEPSEEK_API_KEY || "",
       "anthropic-version": "2023-06-01",
     },
-    body: JSON.stringify({ ...body, model: "deepseek-chat" }),
+    body: JSON.stringify({ ...body, model: "deepseek-v4-pro" }),
   });
   return { res, provider: "deepseek", usedModel: "deepseek-chat" };
 }
