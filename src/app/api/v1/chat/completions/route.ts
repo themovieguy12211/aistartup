@@ -38,13 +38,14 @@ export async function POST(req: NextRequest) {
     const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
 
     const supabase = await createServiceSupabase();
-    const { data: apiKey } = await supabase.from("api_keys").select("*, profiles!inner(*)").eq("hash", keyHash).single();
+    const { data: apiKey } = await supabase.from("api_keys").select("*").eq("hash", keyHash).single();
 
     if (!apiKey || !apiKey.is_active) return Response.json({ error: "Invalid API key" }, { status: 401 });
 
-    await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", apiKey.id);
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", apiKey.user_id).single();
+    if (!profile) return Response.json({ error: "Account not found" }, { status: 401 });
 
-    const profile = apiKey.profiles;
+    await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", apiKey.id);
     if (profile.credits <= 0) return Response.json({ error: "Insufficient credits", code: "insufficient_credits" }, { status: 402 });
 
     const body = await req.json();
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
     if (stream) {
       const preAuth = 0.001;
       const nc = +(profile.credits - preAuth).toFixed(8);
-      await supabase.from("profiles").update({ credits: nc }).eq("id", profile.id);
+      await supabase.from("profiles").update({ credits: nc }).eq("id", apiKey.user_id);
       return new Response(providerRes.body, { headers: { "Content-Type": "text/event-stream" } });
     }
 
@@ -83,8 +84,8 @@ export async function POST(req: NextRequest) {
     const cost = calculateCost(model, tokensIn, tokensOut);
     const newCredits = +(profile.credits - cost).toFixed(8);
 
-    await supabase.from("profiles").update({ credits: newCredits }).eq("id", profile.id);
-    await supabase.from("usage_records").insert({ model: usedModel, provider: usedProvider, tokens_in: tokensIn, tokens_out: tokensOut, cost, api_key_id: apiKey.id, user_id: profile.id });
+    await supabase.from("profiles").update({ credits: newCredits }).eq("id", apiKey.user_id);
+    await supabase.from("usage_records").insert({ model: usedModel, provider: usedProvider, tokens_in: tokensIn, tokens_out: tokensOut, cost, api_key_id: apiKey.id, user_id: apiKey.user_id });
 
     const pricing = getModelPricing(model);
     data.aragoniteai = { model: usedModel, provider: usedProvider, cost: `$${cost.toFixed(6)}`, rate: `$${pricing.pricePerMIn}/M in, $${pricing.pricePerMOut}/M out`, credits_remaining: newCredits, latency_ms: Date.now() - startTime };

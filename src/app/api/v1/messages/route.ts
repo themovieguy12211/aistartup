@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     const supabase = await createServiceSupabase();
     const { data: apiKey } = await supabase
       .from("api_keys")
-      .select("*, profiles!inner(*)")
+      .select("*")
       .eq("hash", keyHash)
       .single();
 
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const profile = apiKey.profiles;
+    const { data: profile } = await supabase.from("profiles").select("*").eq("id", apiKey.user_id).single(); if (!profile) return Response.json({ error: "Account not found" }, { status: 401 });
     if (profile.credits <= 0) {
       return Response.json(
         { type: "error", error: { type: "permission_error", message: "Insufficient credits. Add credits to continue." } },
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
     if (stream) {
       const preAuth = 0.001;
       const nc = +(profile.credits - preAuth).toFixed(8);
-      await supabase.from("profiles").update({ credits: nc }).eq("id", profile.id);
+      await supabase.from("profiles").update({ credits: nc }).eq("id", apiKey.user_id);
 
       return new Response(providerRes.body, {
         headers: {
@@ -142,10 +142,10 @@ export async function POST(req: NextRequest) {
     const cost = calculateCost(model, tokensIn, tokensOut);
     const newCredits = +(profile.credits - cost).toFixed(8);
 
-    await supabase.from("profiles").update({ credits: newCredits }).eq("id", profile.id);
+    await supabase.from("profiles").update({ credits: newCredits }).eq("id", apiKey.user_id);
     await supabase.from("usage_records").insert({
       model: usedModel, provider, tokens_in: tokensIn, tokens_out: tokensOut, cost,
-      api_key_id: apiKey.id, user_id: profile.id,
+      api_key_id: apiKey.id, user_id: apiKey.user_id,
     });
 
     const pricing = getModelPricing(model);
