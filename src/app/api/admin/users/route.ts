@@ -18,7 +18,15 @@ export async function GET() {
     const users = await Promise.all((profiles || []).map(async (p) => {
       const { count: keyCount } = await supabase.from("api_keys").select("*", { count: "exact", head: true }).eq("user_id", p.id);
       const { count: usageCount } = await supabase.from("usage_records").select("*", { count: "exact", head: true }).eq("user_id", p.id);
-      return { ...p, _count: { apiKeys: keyCount || 0, usageRecords: usageCount || 0 } };
+      return {
+        id: p.id,
+        email: p.email,
+        name: p.name,
+        credits: p.credits,
+        role: p.role,
+        createdAt: p.created_at,
+        _count: { apiKeys: keyCount || 0, usageRecords: usageCount || 0 },
+      };
     }));
 
     return NextResponse.json({ users });

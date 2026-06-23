@@ -33,20 +33,19 @@ export async function createServerSupabase() {
   );
 }
 
-// Service role client for admin operations (bypasses RLS)
+// Service role client for admin operations (bypasses RLS, ignores user session)
 export async function createServiceSupabase() {
-  const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
       cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
-        },
+        getAll() { return []; },
+        setAll() {},
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
       },
     }
   );
