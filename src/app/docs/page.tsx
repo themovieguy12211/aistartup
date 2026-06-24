@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "@/lib/use-session";
 import Navbar from "@/components/Navbar";
+import ChatNavbar from "@/components/ChatNavbar";
 import { Container, Row, Col, Card, Badge } from "react-bootstrap";
 import { MODELS } from "@/lib/pricing";
 
@@ -156,6 +158,7 @@ const { text } = await generateText({
 ];
 
 export default function DocsPage() {
+  const { data: session } = useSession();
   const [tab, setTab] = useState<"quickstart" | "integrations" | "reference" | "pricing">("quickstart");
 
   const tabs = [
@@ -167,7 +170,7 @@ export default function DocsPage() {
 
   return (
     <>
-      <Navbar />
+      {session ? <ChatNavbar credits={null} onCreditsChange={() => {}} /> : <Navbar />}
       <main className="py-5">
         <Container style={{ maxWidth: "960px" }}>
           {/* Header */}

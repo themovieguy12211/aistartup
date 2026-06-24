@@ -1,10 +1,16 @@
+"use client";
+
+import { useSession } from "@/lib/use-session";
 import Navbar from "@/components/Navbar";
+import ChatNavbar from "@/components/ChatNavbar";
 import PricingSection from "@/components/PricingSection";
 
 export default function PricingPage() {
+  const { data: session } = useSession();
+
   return (
     <>
-      <Navbar />
+      {session ? <ChatNavbar credits={null} onCreditsChange={() => {}} /> : <Navbar />}
       <main>
         <div className="text-center pt-5 pb-3">
           <h1 className="display-5 fw-bold">Pricing Plans</h1>

@@ -105,10 +105,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const user = await requireUser();
     const supabase = await createServerSupabase();
     const { id } = await params;
-    const { model, content } = await req.json();
+    const { model, content, displayContent } = await req.json();
 
     if (!content?.trim()) return Response.json({ error: "Message required" }, { status: 400 });
     if (user.credits <= 0) return Response.json({ error: "Out of credits!", code: "insufficient_credits" }, { status: 402 });
+
+    // Save the clean user message (without search context)
+    const cleanContent = displayContent || content.trim();
 
     const { data: conversation } = await supabase.from("conversations").select("*").eq("id", id).eq("user_id", user.id).single();
     if (!conversation) return Response.json({ error: "Not found" }, { status: 404 });
@@ -117,7 +120,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     // Save user message
     await supabase.from("messages").insert({
-      role: "user", content: content.trim(), model: null, conversation_id: id, user_id: user.id,
+      role: "user", content: cleanContent, model: null, conversation_id: id, user_id: user.id,
     });
 
     // Build message history

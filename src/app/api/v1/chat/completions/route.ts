@@ -72,9 +72,16 @@ export async function POST(req: NextRequest) {
     if (!providerRes.ok) return Response.json({ error: `Upstream error: ${providerRes.status}` }, { status: providerRes.status });
 
     if (stream) {
-      const preAuth = 0.001;
-      const nc = +(profile.credits - preAuth).toFixed(8);
-      await supabase.from("profiles").update({ credits: nc }).eq("id", apiKey.user_id);
+      const bodySize = JSON.stringify(body).length;
+      const estimatedInputTokens = Math.ceil(bodySize / 4);
+      const estimatedOutputTokens = 2000;
+      const cost = calculateCost(model, estimatedInputTokens, estimatedOutputTokens);
+      const nc = +(profile.credits - cost).toFixed(8);
+      await supabase.from("profiles").update({ credits: nc < 0 ? 0 : nc }).eq("id", apiKey.user_id);
+      await supabase.from("usage_records").insert({
+        model: usedModel, provider: usedProvider || "deepseek", tokens_in: estimatedInputTokens, tokens_out: estimatedOutputTokens, cost,
+        api_key_id: apiKey.id, user_id: apiKey.user_id,
+      });
       return new Response(providerRes.body, { headers: { "Content-Type": "text/event-stream" } });
     }
 

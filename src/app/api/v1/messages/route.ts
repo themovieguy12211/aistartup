@@ -115,13 +115,63 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // If streaming, pass through
+    // If streaming, intercept to capture exact token usage
     if (stream) {
-      const preAuth = 0.001;
-      const nc = +(profile.credits - preAuth).toFixed(8);
-      await supabase.from("profiles").update({ credits: nc }).eq("id", apiKey.user_id);
+      const reader = providerRes.body?.getReader();
+      if (!reader) throw new Error("No stream");
 
-      return new Response(providerRes.body, {
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let buffer = "";
+
+      const interceptedStream = new ReadableStream({
+        async start(controller) {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              controller.enqueue(value);
+              buffer += decoder.decode(value, { stream: true });
+
+              // Parse SSE events for usage data
+              const lines = buffer.split("\n");
+              buffer = lines.pop() || ""; // keep incomplete line in buffer
+
+              for (const line of lines) {
+                if (line.startsWith("data: ")) {
+                  try {
+                    const parsed = JSON.parse(line.slice(6));
+                    if (parsed.type === "message_start" && parsed.message?.usage?.input_tokens) {
+                      inputTokens = parsed.message.usage.input_tokens;
+                    }
+                    if (parsed.type === "message_delta" && parsed.usage?.output_tokens) {
+                      outputTokens = parsed.usage.output_tokens;
+                    }
+                  } catch {}
+                }
+              }
+            }
+
+            // Deduct exact tokens from credits
+            const cost = calculateCost(model, inputTokens || Math.ceil(JSON.stringify(body).length / 4), outputTokens || 2000);
+            const nc = +(profile.credits - cost).toFixed(8);
+            await supabase.from("profiles").update({ credits: nc < 0 ? 0 : nc }).eq("id", apiKey.user_id);
+            await supabase.from("usage_records").insert({
+              model: usedModel, provider, tokens_in: inputTokens, tokens_out: outputTokens, cost,
+              api_key_id: apiKey.id, user_id: apiKey.user_id,
+            });
+
+            controller.close();
+          } catch (e) {
+            controller.error(e);
+          }
+        },
+      });
+
+      return new Response(interceptedStream, {
         headers: {
           "Content-Type": "text/event-stream",
           "Cache-Control": "no-cache",

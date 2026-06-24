@@ -115,13 +115,14 @@ async function fetchResearch(
 
 async function streamOne(
   model: string, content: string, convId: string | null,
-  onReasoning?: (r: string) => void
+  onReasoning?: (r: string) => void,
+  displayContent?: string,
 ): Promise<{ text: string; reasoning: string }> {
   if (!convId) throw new Error("No conversation");
   const res = await fetch(`/api/conversations/${convId}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, content }),
+    body: JSON.stringify({ model, content, displayContent }),
   });
   if (!res.ok) throw new Error(`${model}: ${res.status}`);
   const reader = res.body?.getReader();
@@ -300,7 +301,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
         };
         setMessages((prev) => [...prev, msgA]);
 
-        const { text: contentA, reasoning: rA } = await streamOne(firstModel, fullPrompt, targetId);
+        const { text: contentA, reasoning: rA } = await streamOne(firstModel, fullPrompt, targetId, undefined, content);
         const pipeReasoning = mergeReasoning([...reasoning], rA);
 
         // Update with model A response
@@ -329,7 +330,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
         };
         setMessages((prev) => [...prev, msgB]);
 
-        const { text: contentB, reasoning: rB } = await streamOne(pipeModel, reviewPrompt, targetId);
+        const { text: contentB, reasoning: rB } = await streamOne(pipeModel, reviewPrompt, targetId, undefined, content);
 
         setMessages((prev) => {
           const copy = [...prev];
@@ -364,7 +365,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
 
         // Fire all in parallel
         const promises = models.map((m) =>
-          streamOne(m, fullPrompt, targetId).then((r) => ({ model: m, content: r.text }))
+          streamOne(m, fullPrompt, targetId, undefined, content).then((r) => ({ model: m, content: r.text }))
         );
 
         // Stream updates — update as each resolves
@@ -395,7 +396,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
         const assistantMsg: Message = { role: "assistant", content: "", model: firstModel, reasoning };
         setMessages((prev) => [...prev, assistantMsg]);
 
-        const { text: result, reasoning: rSingle } = await streamOne(firstModel, fullPrompt, targetId);
+        const { text: result, reasoning: rSingle } = await streamOne(firstModel, fullPrompt, targetId, undefined, content);
 
         setMessages((prev) => {
           const copy = [...prev];
@@ -539,7 +540,7 @@ TASK: Rewrite your response using ONLY these verified results. You MUST:
             verifySteps.push(`synthesizing verified answer...`);
 
             // Second model pass for verified synthesis
-            const { text: refinedResult, reasoning: rRefined } = await streamOne(firstModel, verificationPrompt, targetId);
+            const { text: refinedResult, reasoning: rRefined } = await streamOne(firstModel, verificationPrompt, targetId, undefined, content);
 
             verifySteps.push(`${results.filter((r) => r.available).length}/${results.length} names available ✓`);
 
