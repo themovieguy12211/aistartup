@@ -24,7 +24,7 @@ export default function GuestChat() {
   // Load guest messages from localStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("aragoniteai_guest_messages");
+      const saved = localStorage.getItem("dagrai_guest_messages");
       if (saved) {
         const parsed = JSON.parse(saved);
         setMessages(parsed);
@@ -42,7 +42,7 @@ export default function GuestChat() {
 
   function saveMessages(msgs: Message[]) {
     try {
-      localStorage.setItem("aragoniteai_guest_messages", JSON.stringify(msgs.slice(-50))); // keep last 50
+      localStorage.setItem("dagrai_guest_messages", JSON.stringify(msgs.slice(-50))); // keep last 50
     } catch {}
   }
 
@@ -194,8 +194,8 @@ export default function GuestChat() {
           color: "rgba(255,255,255,0.5)",
         }}
       >
-        <span style={{ color: "rgba(255,255,255,0.3)" }}>guest@aragoniteai:~$</span>{" "}
-        You&apos;re trying AragoniteAI — messages aren&apos;t saved.{" "}
+        <span style={{ color: "rgba(255,255,255,0.3)" }}>guest@dagrai:~$</span>{" "}
+        You&apos;re trying DagrAI — messages aren&apos;t saved.{" "}
         <Link href="/signup" style={{ color: "var(--brand-purple)" }}>
           Create a free account →
         </Link>
@@ -229,7 +229,7 @@ export default function GuestChat() {
             color: "rgba(255,255,255,0.25)",
           }}
         >
-          guest@aragoniteai — bash — 80×24
+          guest@dagrai — bash — 80×24
         </span>
       </div>
 
@@ -242,7 +242,7 @@ export default function GuestChat() {
           >
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", textAlign: "center" }}>
               <div style={{ fontSize: "1.5rem", color: "rgba(255,255,255,0.12)" }}>◆</div>
-              <div style={{ color: "rgba(255,255,255,0.18)" }}>AragoniteAI Terminal</div>
+              <div style={{ color: "rgba(255,255,255,0.18)" }}>DagrAI Terminal</div>
               <div style={{ color: "rgba(255,255,255,0.1)", marginTop: "4px" }}>
                 Every model. One terminal. Lowest price.
               </div>

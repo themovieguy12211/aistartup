@@ -54,7 +54,7 @@ export default function FeaturesSection() {
                 backgroundClip: "text",
               }}
             >
-              AragoniteAI
+              DagrAI
             </span>
           </h2>
           <p style={{ color: "rgba(255,255,255,0.5)", maxWidth: "600px", margin: "0 auto" }}>

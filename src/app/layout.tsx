@@ -4,12 +4,12 @@ import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 
 export const metadata: Metadata = {
-  title: "AragoniteAI — One API for Every Model",
+  title: "DagrAI — One API for Every Model",
   description:
     "Access DeepSeek, Claude, Llama, Mistral, and more through a single API — at the lowest possible price. Pay only for what you use.",
   keywords: ["AI API", "LLM API", "model aggregation", "DeepSeek", "Claude", "AI proxy"],
   openGraph: {
-    title: "AragoniteAI — One API for Every Model",
+    title: "DagrAI — One API for Every Model",
     description: "Access every major AI model through one unified API at the lowest price.",
     type: "website",
   },
@@ -31,7 +31,7 @@ export default function RootLayout({
             <div className="row align-items-center">
               <div className="col-md-6 text-center text-md-start">
                 <span className="fw-bold" style={{ color: "var(--brand-purple)" }}>
-                  AragoniteAI
+                  DagrAI
                 </span>{" "}
                 &copy; {new Date().getFullYear()} — One API, Every Model.
               </div>

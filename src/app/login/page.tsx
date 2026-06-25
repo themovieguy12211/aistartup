@@ -42,7 +42,7 @@ export default function LoginPage() {
         <div className="text-center mb-4">
           <h2 className="fw-bold">Welcome Back</h2>
           <p style={{ color: "rgba(255,255,255,0.5)" }}>
-            Sign in to your AragoniteAI account
+            Sign in to your DagrAI account
           </p>
         </div>
 

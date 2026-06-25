@@ -64,7 +64,7 @@ function extractTitle(html: string): string {
 
 async function fetchPage(url: string, retries = 1): Promise<{ title: string; content: string } | null> {
   const userAgents = [
-    "Mozilla/5.0 (compatible; AragoniteAI/1.0; +https://aragoniteai.dev)",
+    "Mozilla/5.0 (compatible; DagrAI/1.0; +https://dagrai.dev)",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
   ];
 
@@ -106,7 +106,7 @@ async function fetchGitHubRepo(owner: string, repo: string): Promise<GitHubInfo 
     // Fetch repo page for overview
     const pageRes = await fetch(`https://github.com/${owner}/${repo}`, {
       signal: ctrl.signal,
-      headers: { "User-Agent": "AragoniteAI-Research/1.0" },
+      headers: { "User-Agent": "DagrAI-Research/1.0" },
     });
     clearTimeout(t);
     if (!pageRes.ok) return null;

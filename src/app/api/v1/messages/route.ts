@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
     const pricing = getModelPricing(model);
     const responseData = {
       ...data,
-      aragoniteai: {
+      dagrai: {
         model: usedModel, provider,
         cost: `$${cost.toFixed(6)}`,
         rate: `$${pricing.pricePerMIn}/M in, $${pricing.pricePerMOut}/M out`,

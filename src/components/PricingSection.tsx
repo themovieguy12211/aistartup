@@ -51,7 +51,7 @@ const tiers = [
       "Slack support",
     ],
     cta: "Contact Us",
-    href: "mailto:enterprise@aragoniteai.dev",
+    href: "mailto:enterprise@dagrai.dev",
     popular: false,
   },
 ];

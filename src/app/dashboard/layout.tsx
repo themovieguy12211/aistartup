@@ -58,7 +58,7 @@ export default function DashboardLayout({
             backgroundClip: "text",
           }}
         >
-          ◆ AragoniteAI
+          ◆ DagrAI
         </Link>
 
         <Nav className="flex-column">

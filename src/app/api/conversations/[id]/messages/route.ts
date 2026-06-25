@@ -65,7 +65,7 @@ async function executeTool(name: string, args: Record<string, string>): Promise<
     case "fetch_page": {
       try {
         const res = await fetch(args.url, {
-          headers: { "User-Agent": "Mozilla/5.0 (compatible; AragoniteAI/1.0)" },
+          headers: { "User-Agent": "Mozilla/5.0 (compatible; DagrAI/1.0)" },
           signal: AbortSignal.timeout(10000),
         });
         if (!res.ok) return `Page fetch failed: ${res.status}`;
@@ -152,7 +152,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             if (toolCalls.length > 0) {
               const lastCall = toolCalls[toolCalls.length - 1];
               controller.enqueue(encoder.encode(
-                `data: {"aragoniteai_tool": ${JSON.stringify({ name: lastCall.name, args: lastCall.args, result: lastCall.result.slice(0, 200) + "..." })}}\n\n`
+                `data: {"dagrai_tool": ${JSON.stringify({ name: lastCall.name, args: lastCall.args, result: lastCall.result.slice(0, 200) + "..." })}}\n\n`
               ));
             }
 
@@ -191,7 +191,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
                 // Send tool call to client
                 controller.enqueue(encoder.encode(
-                  `data: {"aragoniteai_tool_call": ${JSON.stringify({ name: funcName, args: funcArgs })}}\n\n`
+                  `data: {"dagrai_tool_call": ${JSON.stringify({ name: funcName, args: funcArgs })}}\n\n`
                 ));
 
                 // Execute the tool
@@ -200,7 +200,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
                 // Send tool result to client
                 controller.enqueue(encoder.encode(
-                  `data: {"aragoniteai_tool_result": ${JSON.stringify({ name: funcName, result: result.slice(0, 500) })}}\n\n`
+                  `data: {"dagrai_tool_result": ${JSON.stringify({ name: funcName, result: result.slice(0, 500) })}}\n\n`
                 ));
 
                 // Add to conversation
@@ -256,7 +256,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           // Send tool calls summary
           if (toolCalls.length > 0) {
             controller.enqueue(encoder.encode(
-              `data: {"aragoniteai_reasoning": ${JSON.stringify(toolCalls.map(tc => `🔧 ${tc.name}(${Object.values(tc.args).join(", ")})`).join("\n"))}}\n\n`
+              `data: {"dagrai_reasoning": ${JSON.stringify(toolCalls.map(tc => `🔧 ${tc.name}(${Object.values(tc.args).join(", ")})`).join("\n"))}}\n\n`
             ));
           }
 

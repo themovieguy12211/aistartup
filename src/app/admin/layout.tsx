@@ -54,7 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             backgroundClip: "text",
           }}
         >
-          ◆ AragoniteAI
+          ◆ DagrAI
         </Link>
         <div
           className="px-2 mb-3"

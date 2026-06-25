@@ -20,7 +20,7 @@ export default function Navbar() {
     >
       <Container>
         <BsNavbar.Brand as={Link} href="/" onClick={closeNav}>
-          <span className="navbar-brand">◆ AragoniteAI</span>
+          <span className="navbar-brand">◆ DagrAI</span>
         </BsNavbar.Brand>
         <BsNavbar.Toggle aria-controls="main-nav" />
         <BsNavbar.Collapse id="main-nav">

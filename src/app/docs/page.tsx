@@ -56,12 +56,12 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
 const integrations = [
   {
     icon: "🖥️", title: "Claude Code", badge: "Anthropic",
-    desc: "Full Claude Code CLI + VS Code support. One AragoniteAI key. All models — Claude, DeepSeek, Llama, Mistral.",
+    desc: "Full Claude Code CLI + VS Code support. One DagrAI key. All models — Claude, DeepSeek, Llama, Mistral.",
     lang: "~/.claude/settings.json",
     code: `{
   "env": {
-    "ANTHROPIC_BASE_URL": "https://aragoniteai.vercel.app/api",
-    "ANTHROPIC_AUTH_TOKEN": "sk-aragoniteai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "ANTHROPIC_BASE_URL": "https://dagrai.vercel.app/api",
+    "ANTHROPIC_AUTH_TOKEN": "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "ANTHROPIC_MODEL": "claude-sonnet-4-6",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-8",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
@@ -76,8 +76,8 @@ const integrations = [
     icon: "📝", title: "Cursor", badge: "OpenAI",
     desc: "Add as a custom model in Cursor settings. OpenAI-compatible endpoint.",
     lang: "Cursor Settings",
-    code: `API Base URL: https://aragoniteai.vercel.app/api/v1
-API Key: sk-aragoniteai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    code: `API Base URL: https://dagrai.vercel.app/api/v1
+API Key: sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 Model ID: deepseek-v4-pro`,
   },
   {
@@ -86,11 +86,11 @@ Model ID: deepseek-v4-pro`,
     lang: "~/.continue/config.json",
     code: `{
   "models": [{
-    "title": "AragoniteAI V4 Pro",
+    "title": "DagrAI V4 Pro",
     "provider": "openai",
     "model": "deepseek-v4-pro",
-    "apiBase": "https://aragoniteai.vercel.app/api/v1",
-    "apiKey": "sk-aragoniteai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    "apiBase": "https://dagrai.vercel.app/api/v1",
+    "apiKey": "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   }]
 }`,
   },
@@ -98,8 +98,8 @@ Model ID: deepseek-v4-pro`,
     icon: "⚡", title: "Aider", badge: "OpenAI",
     desc: "AI pair programming. Switch models by changing --model flag. All models supported.",
     lang: "Terminal",
-    code: `export OPENAI_API_BASE=https://aragoniteai.vercel.app/api/v1
-export OPENAI_API_KEY=sk-aragoniteai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    code: `export OPENAI_API_BASE=https://dagrai.vercel.app/api/v1
+export OPENAI_API_KEY=sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # Any model works — DeepSeek, Claude, Llama, Mistral
 aider --model deepseek-v4-pro       # fast + 1M context
 aider --model claude-sonnet-4-6     # best code generation 
@@ -112,8 +112,8 @@ aider --model deepseek-reasoner     # deep reasoning`,
     code: `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://aragoniteai.vercel.app/api/v1",
-    api_key="sk-aragoniteai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    base_url="https://dagrai.vercel.app/api/v1",
+    api_key="sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 )
 
 response = client.chat.completions.create(
@@ -129,8 +129,8 @@ print(response.choices[0].message.content)`,
     code: `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://aragoniteai.vercel.app/api/v1",
-  apiKey: "sk-aragoniteai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  baseURL: "https://dagrai.vercel.app/api/v1",
+  apiKey: "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 });
 
 const response = await client.chat.completions.create({
@@ -140,18 +140,18 @@ const response = await client.chat.completions.create({
   },
   {
     icon: "▲", title: "Vercel AI SDK", badge: "OpenAI",
-    desc: "The standard for Next.js AI apps. createOpenAI pointing to AragoniteAI.",
+    desc: "The standard for Next.js AI apps. createOpenAI pointing to DagrAI.",
     lang: "TypeScript",
     code: `import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
-const aragoniteai = createOpenAI({
-  baseURL: "https://aragoniteai.vercel.app/api/v1",
-  apiKey: "sk-aragoniteai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+const dagrai = createOpenAI({
+  baseURL: "https://dagrai.vercel.app/api/v1",
+  apiKey: "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 });
 
 const { text } = await generateText({
-  model: aragoniteai("deepseek-v4-pro"),
+  model: dagrai("deepseek-v4-pro"),
   prompt: "Write a haiku about AI",
 });`,
   },
@@ -215,7 +215,7 @@ export default function DocsPage() {
                 <Badge bg="secondary" className="mb-2">1</Badge>{" "}
                 <span className="fw-semibold">Get an API key</span>
                 <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem", marginTop: "4px" }}>
-                  Sign up at aragoniteai.dev → Dashboard → API Keys → Create. Copy your key (shown once).
+                  Sign up at dagrai.dev → Dashboard → API Keys → Create. Copy your key (shown once).
                 </p>
               </div>
               <div className="mb-3">
@@ -224,8 +224,8 @@ export default function DocsPage() {
               </div>
               <CodeBlock
                 lang="bash"
-                code={`curl https://aragoniteai.vercel.app/api/v1/chat/completions \\
-  -H "Authorization: Bearer sk-aragoniteai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \\
+                code={`curl https://dagrai.vercel.app/api/v1/chat/completions \\
+  -H "Authorization: Bearer sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "deepseek-v4-pro",
@@ -246,7 +246,7 @@ export default function DocsPage() {
     }
   }],
   "usage": { "prompt_tokens": 10, "completion_tokens": 8, "total_tokens": 18 },
-  "aragoniteai": {
+  "dagrai": {
     "model": "deepseek-v4-pro",
     "provider": "deepseek",
     "cost": "$0.000012",
