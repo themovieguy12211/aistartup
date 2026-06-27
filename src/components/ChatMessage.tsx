@@ -15,17 +15,11 @@ interface Props {
 export default function ChatMessage({ role, content, model, cost, reasoning }: Props) {
   const [showReasoning, setShowReasoning] = useState(false);
 
-  // Live research steps during processing
   if (role === "research") {
     return (
-      <div className="mb-2" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
-        <div style={{ color: "rgba(255,255,255,0.2)", marginBottom: "2px" }}>
-          $ researching...
-        </div>
+      <div className="mb-2" style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontStyle: "italic" }}>
         {content.split("\n").map((line, i) => (
-          <div key={i} style={{ color: "rgba(255,255,255,0.25)" }}>
-            {line}
-          </div>
+          <div key={i}>{line}</div>
         ))}
       </div>
     );
@@ -33,50 +27,51 @@ export default function ChatMessage({ role, content, model, cost, reasoning }: P
 
   if (role === "user") {
     return (
-      <div className="mb-1" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: "0.9rem" }}>
-        <span style={{ color: "#22c55e" }}>$</span>{" "}
-        <span style={{ color: "#e4e4e7" }}>{content}</span>
+      <div className="mb-3 d-flex justify-content-end">
+        <div
+          className="chat-message user"
+          style={{ fontSize: "0.95rem", lineHeight: 1.6 }}
+        >
+          {content}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mb-3" style={{ fontFamily: "'JetBrains Mono', 'Fira Code', monospace", fontSize: "0.9rem" }}>
+    <div className="mb-3">
       {/* Collapsible reasoning */}
       {reasoning && reasoning.length > 0 && (
         <div className="mb-2">
           <button
             onClick={() => setShowReasoning(!showReasoning)}
             style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              color: "rgba(255,255,255,0.35)",
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border)",
+              color: "var(--text-muted)",
+              fontSize: "0.78rem",
+              borderRadius: "6px",
               padding: "4px 10px",
-              borderRadius: "3px",
               cursor: "pointer",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.7rem",
             }}
           >
-            {showReasoning ? "▼" : "▶"} Thought process ({reasoning.length} step{reasoning.length !== 1 ? "s" : ""})
+            {showReasoning ? "Hide" : "Show"} thought process ({reasoning.length} step{reasoning.length !== 1 ? "s" : ""})
           </button>
           {showReasoning && (
             <div
               style={{
-                marginTop: "4px",
-                padding: "8px 12px",
-                background: "rgba(0,0,0,0.2)",
-                border: "1px solid rgba(255,255,255,0.04)",
-                borderRadius: "4px",
-                color: "rgba(255,255,255,0.3)",
-                fontSize: "0.72rem",
-                lineHeight: 1.6,
+                marginTop: "6px",
+                padding: "10px 14px",
+                background: "var(--bg-primary)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "6px",
+                color: "var(--text-muted)",
+                fontSize: "0.82rem",
+                lineHeight: 1.7,
               }}
             >
               {reasoning.map((step, i) => (
-                <div key={i} style={{ color: "rgba(255,255,255,0.25)" }}>
-                  {step}
-                </div>
+                <div key={i}>{step}</div>
               ))}
             </div>
           )}
@@ -85,22 +80,15 @@ export default function ChatMessage({ role, content, model, cost, reasoning }: P
 
       {/* Response content */}
       {!content ? (
-        <div style={{ color: "rgba(255,255,255,0.3)" }}>
-          <Spinner size="sm" style={{ color: "var(--brand-purple)" }} /> thinking...
+        <div style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+          <Spinner size="sm" style={{ color: "var(--brand)" }} /> Thinking...
         </div>
       ) : (
-        <div
-          style={{
-            color: "rgba(255,255,255,0.65)",
-            wordBreak: "break-word",
-            paddingLeft: "12px",
-            borderLeft: "2px solid rgba(255,255,255,0.1)",
-          }}
-        >
+        <div className="chat-message assistant" style={{ fontSize: "0.95rem", lineHeight: 1.7 }}>
           <MarkdownRenderer content={content} />
           {model && (
-            <div style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.2)", marginTop: "8px" }}>
-              [{model}]{cost != null ? ` [$${cost.toFixed(6)}]` : ""}
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "10px", paddingTop: "8px", borderTop: "1px solid var(--border-subtle)" }}>
+              {model}{cost != null ? ` · $${cost.toFixed(6)}` : ""}
             </div>
           )}
         </div>

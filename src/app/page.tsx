@@ -31,7 +31,7 @@ export default function Home() {
   if (status === "loading") {
     return (
       <div className="d-flex justify-content-center align-items-center min-vh-100">
-        <Spinner animation="border" style={{ color: "var(--brand-purple)" }} />
+        <Spinner animation="border" style={{ color: "var(--brand)" }} />
       </div>
     );
   }

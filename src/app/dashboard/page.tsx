@@ -12,6 +12,7 @@ interface UsageStats {
   totalCost: number;
   activeKeys: number;
   credits: number;
+  dailyFreeTokens: number;
 }
 
 export default function DashboardOverview() {
@@ -39,35 +40,35 @@ export default function DashboardOverview() {
   if (loading) {
     return (
       <div className="text-center py-5">
-        <Spinner animation="border" style={{ color: "var(--brand-purple)" }} />
+        <Spinner animation="border" style={{ color: "var(--brand)" }} />
       </div>
     );
   }
+
+  const hasCredits = (stats?.credits ?? 0) > 0;
+  const hasFreeTokens = (stats?.dailyFreeTokens ?? 0) > 0;
+  const isActive = hasCredits || hasFreeTokens;
 
   const cards = [
     {
       title: "Total Requests",
       value: stats?.totalRequests?.toLocaleString() ?? "—",
       subtitle: "All time",
-      icon: "📨",
     },
     {
       title: "Total Tokens",
       value: stats?.totalTokens?.toLocaleString() ?? "—",
       subtitle: "Input + Output",
-      icon: "🧮",
     },
     {
       title: "Total Spend",
       value: stats?.totalCost != null ? `$${stats.totalCost.toFixed(4)}` : "—",
       subtitle: "Across all models",
-      icon: "💵",
     },
     {
       title: "Active Keys",
       value: stats?.activeKeys?.toString() ?? "—",
       subtitle: "API keys",
-      icon: "🔑",
     },
   ];
 
@@ -75,55 +76,61 @@ export default function DashboardOverview() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="fw-bold mb-1">
-            Welcome back{ session?.user?.name ? `, ${session.user.name}` : ""} 👋
+          <h2 className="fw-semibold mb-1">
+            Welcome back{ session?.user?.name ? `, ${session.user.name}` : ""}
           </h2>
-          <p style={{ color: "rgba(255,255,255,0.5)", margin: 0 }}>
+          <p style={{ color: "var(--text-muted)", margin: 0 }}>
             Here&apos;s what&apos;s happening with your account.
           </p>
         </div>
-        <Link href="/dashboard/playground" className="btn btn-primary">
-          Open Playground →
+        <Link href="/dashboard/playground" style={{ background: "var(--brand)", color: "#fff", borderRadius: "6px", padding: "6px 16px", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>
+          Open Playground
         </Link>
       </div>
 
-      {/* Credit Balance Alert */}
+      {/* Balance Alert */}
       <div
-        className={`p-3 rounded-3 mb-3 d-flex align-items-center justify-content-between ${
-          (stats?.credits ?? 0) <= 0 ? "bg-danger bg-opacity-10" : ""
-        }`}
+        className="p-3 rounded-3 mb-3 d-flex align-items-center justify-content-between"
         style={{
-          background:
-            (stats?.credits ?? 0) > 0
-              ? "rgba(34, 197, 94, 0.08)"
-              : undefined,
-          border: `1px solid ${
-            (stats?.credits ?? 0) > 0
-              ? "rgba(34, 197, 94, 0.25)"
-              : "rgba(239, 68, 68, 0.3)"
-          }`,
+          background: isActive ? "var(--bg-card)" : "var(--bg-card)",
+          border: `1px solid var(--border)`,
         }}
       >
         <div className="d-flex align-items-center gap-3">
-          <span className="fs-4">{ (stats?.credits ?? 0) > 0 ? "💰" : "⚠️" }</span>
           <div>
-            <div className="fw-bold fs-5">
-              {stats?.credits != null
-                ? `$${stats.credits.toFixed(4)}`
-                : "—"}
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
-              {(stats?.credits ?? 0) > 0
-                ? "Available credits — API calls stop when this hits $0.00"
-                : "Out of credits! Add more to resume API access."}
+            {hasCredits ? (
+              <div className="fw-semibold mb-1" style={{ color: "#22c55e" }}>
+                ${stats!.credits.toFixed(4)} in credits
+              </div>
+            ) : (
+              <div className="fw-semibold mb-1" style={{ color: "var(--text-secondary)" }}>
+                $0.00 in credits
+              </div>
+            )}
+            <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+              {hasFreeTokens
+                ? `${(stats!.dailyFreeTokens / 1000).toFixed(0)}k free tokens remaining today`
+                : "No free tokens remaining today"}
+              {isActive
+                ? " — API calls are active"
+                : " — Add credits to resume"}
             </div>
           </div>
         </div>
         <Link
           href="/dashboard/billing"
-          className={`btn btn-sm ${(stats?.credits ?? 0) <= 0 ? "btn-danger" : "btn-outline-light"}`}
+          style={{
+            background: !hasCredits ? "var(--brand)" : "var(--bg-elevated)",
+            color: !hasCredits ? "#fff" : "var(--text-primary)",
+            border: !hasCredits ? "none" : "1px solid var(--border)",
+            borderRadius: "6px",
+            padding: "5px 14px",
+            fontSize: "0.82rem",
+            fontWeight: 500,
+            textDecoration: "none",
+          }}
         >
-          {(stats?.credits ?? 0) <= 0 ? "Add Credits →" : "Top Up →"}
+          {!hasCredits ? "Add Credits" : "Top Up"}
         </Link>
       </div>
 
@@ -132,12 +139,11 @@ export default function DashboardOverview() {
           <Col md={3} key={i} className="mb-3">
             <Card className="h-100">
               <Card.Body>
-                <div className="fs-4 mb-2">{card.icon}</div>
                 <div className="fs-4 fw-bold">{card.value}</div>
                 <div className="fw-semibold" style={{ fontSize: "0.9rem" }}>
                   {card.title}
                 </div>
-                <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>
+                <div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
                   {card.subtitle}
                 </div>
               </Card.Body>
@@ -153,7 +159,7 @@ export default function DashboardOverview() {
         <Card.Body>
           <ol className="mb-0" style={{ lineHeight: 2 }}>
             <li>
-              <Link href="/dashboard/keys" style={{ color: "var(--brand-purple)" }}>
+              <Link href="/dashboard/keys" style={{ color: "var(--brand)" }}>
                 Create an API key
               </Link>{" "}
               from the API Keys page.
@@ -163,19 +169,19 @@ export default function DashboardOverview() {
               <div
                 className="mt-2 p-3 rounded"
                 style={{
-                  background: "rgba(0,0,0,0.3)",
+                  background: "var(--bg-primary)",
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: "0.85rem",
                 }}
               >
-                curl https://api.dagrai.dev/v1/chat/completions \<br />
+                curl https://api.dagrai.xyz/v1/chat/completions \<br />
                 &nbsp;&nbsp;-H &quot;Authorization: Bearer YOUR_API_KEY&quot; \<br />
                 &nbsp;&nbsp;-d &apos;{`{"model": "deepseek-chat", "messages": [{"role": "user", "content": "Hello!"}]}`}&apos;
               </div>
             </li>
             <li>
               Or try it right now in the{" "}
-              <Link href="/dashboard/playground" style={{ color: "var(--brand-purple)" }}>
+              <Link href="/dashboard/playground" style={{ color: "var(--brand)" }}>
                 Playground
               </Link>
               .

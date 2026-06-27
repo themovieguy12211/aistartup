@@ -4,13 +4,13 @@ import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 
 export const metadata: Metadata = {
-  title: "DagrAI — One API for Every Model",
+  title: "DagrAI — Claude & Every Model, One API",
   description:
-    "Access DeepSeek, Claude, Llama, Mistral, and more through a single API — at the lowest possible price. Pay only for what you use.",
-  keywords: ["AI API", "LLM API", "model aggregation", "DeepSeek", "Claude", "AI proxy"],
+    "Access Claude Opus, Sonnet, Haiku — plus DeepSeek, Llama, Mistral — through a single API at the lowest price. Pay only for what you use.",
+  keywords: ["Claude API", "Anthropic API", "AI API", "LLM API", "model aggregation", "DeepSeek", "AI proxy"],
   openGraph: {
-    title: "DagrAI — One API for Every Model",
-    description: "Access every major AI model through one unified API at the lowest price.",
+    title: "DagrAI — Claude & Every Model, One API",
+    description: "Access Claude, DeepSeek, Llama, Mistral and more through one unified API at the lowest price.",
     type: "website",
   },
 };
@@ -30,19 +30,19 @@ export default function RootLayout({
           <div className="container">
             <div className="row align-items-center">
               <div className="col-md-6 text-center text-md-start">
-                <span className="fw-bold" style={{ color: "var(--brand-purple)" }}>
+                <span className="fw-semibold" style={{ color: "var(--text-primary)" }}>
                   DagrAI
                 </span>{" "}
                 &copy; {new Date().getFullYear()} — One API, Every Model.
               </div>
-              <div className="col-md-6 text-center text-md-end mt-2 mt-md-0">
-                <a href="/docs" className="text-decoration-none me-3" style={{ color: "rgba(255,255,255,0.4)" }}>
+              <div className="col-md-6 text-center text-md-end mt-2 mt-md-0" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+                <a href="/docs" className="text-decoration-none me-3" style={{ color: "var(--text-muted)" }}>
                   Docs
                 </a>
-                <a href="/pricing" className="text-decoration-none me-3" style={{ color: "rgba(255,255,255,0.4)" }}>
+                <a href="/pricing" className="text-decoration-none me-3" style={{ color: "var(--text-muted)" }}>
                   Pricing
                 </a>
-                <a href="#" className="text-decoration-none" style={{ color: "rgba(255,255,255,0.4)" }}>
+                <a href="#" className="text-decoration-none" style={{ color: "var(--text-muted)" }}>
                   Status
                 </a>
               </div>

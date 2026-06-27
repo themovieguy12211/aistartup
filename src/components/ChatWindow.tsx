@@ -33,51 +33,29 @@ export default function ChatWindow({ messages, title }: Props) {
   }, [messages]);
 
   return (
-    <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0, background: "#0a0a0f" }}>
-      {/* Terminal title bar */}
-      <div
-        className="d-flex align-items-center px-3 py-2"
-        style={{
-          background: "rgba(255,255,255,0.03)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          flexShrink: 0,
-        }}
-      >
-        <span className="d-inline-block rounded-circle me-2" style={{ width: "10px", height: "10px", background: "#ef4444" }} />
-        <span className="d-inline-block rounded-circle me-2" style={{ width: "10px", height: "10px", background: "#eab308" }} />
-        <span className="d-inline-block rounded-circle me-3" style={{ width: "10px", height: "10px", background: "#22c55e" }} />
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.75rem", color: "rgba(255,255,255,0.25)" }}>
-          {title || "dagrai ~ chat"} — bash — 80×24
-        </span>
-      </div>
-
+    <div className="flex-grow-1 d-flex flex-column" style={{ minHeight: 0 }}>
       {/* Messages */}
       <div className="flex-grow-1 overflow-auto p-4" style={{ minHeight: 0 }}>
         {messages.length === 0 && (
-          <div className="d-flex align-items-center justify-content-center h-100" style={{ color: "rgba(255,255,255,0.2)" }}>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", textAlign: "center" }}>
-              <div style={{ fontSize: "1.5rem", color: "rgba(255,255,255,0.12)" }}>◆</div>
-              <div style={{ color: "rgba(255,255,255,0.15)" }}>DagrAI Terminal v1.0</div>
-              <div style={{ color: "rgba(255,255,255,0.1)" }}>Select models above. Use |&gt; for pipeline.</div>
-              <div style={{ color: "rgba(255,255,255,0.2)", marginTop: "12px" }}>
-                $ <span style={{ color: "#22c55e" }}>▋</span>
+          <div className="d-flex align-items-center justify-content-center h-100" style={{ color: "var(--text-muted)" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "1.1rem", fontWeight: 500, color: "var(--text-secondary)", marginBottom: "4px" }}>
+                {title || "New Chat"}
+              </div>
+              <div style={{ fontSize: "0.85rem" }}>
+                Select a model and send a message to get started.
               </div>
             </div>
           </div>
         )}
 
         {messages.map((msg, i) => {
-          // Pipeline message
           if (msg.role === "pipeline" && msg.responses && msg.pipeline) {
             return <PipelineMessage key={i} msg={msg} />;
           }
-
-          // Compare message (multiple responses)
           if (msg.responses && msg.responses.length >= 2) {
             return <CompareMessage key={i} msg={msg} />;
           }
-
-          // Normal message
           return (
             <ChatMessage
               key={msg.id || i}
@@ -100,45 +78,41 @@ function CompareMessage({ msg }: { msg: Message }) {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <div className="mb-3" style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", overflow: "hidden" }}>
-      {/* Tabs */}
-      <div className="d-flex" style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+    <div className="mb-3" style={{ border: "1px solid var(--border)", borderRadius: "8px", overflow: "hidden" }}>
+      <div className="d-flex" style={{ background: "var(--bg-card)", borderBottom: "1px solid var(--border-subtle)" }}>
         {msg.responses!.map((r, i) => (
           <button
             key={r.model}
             onClick={() => setActiveTab(i)}
             style={{
-              background: i === activeTab ? "rgba(139,92,246,0.15)" : "transparent",
+              background: i === activeTab ? "var(--bg-elevated)" : "transparent",
               border: "none",
-              borderBottom: i === activeTab ? "2px solid var(--brand-purple)" : "2px solid transparent",
-              color: i === activeTab ? "#e4e4e7" : "rgba(255,255,255,0.4)",
-              padding: "6px 14px",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.75rem",
+              borderBottom: i === activeTab ? "2px solid var(--brand)" : "2px solid transparent",
+              color: i === activeTab ? "var(--text-primary)" : "var(--text-muted)",
+              padding: "8px 14px",
+              fontSize: "0.85rem",
               cursor: "pointer",
-              transition: "all 0.1s",
+              fontWeight: i === activeTab ? 500 : 400,
             }}
           >
             {r.model.replace("claude-", "").replace("deepseek-", "ds-")}
-            {r.content ? " ✓" : " ..."}
           </button>
         ))}
-        <div className="ms-auto pe-2 d-flex align-items-center">
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: "rgba(255,255,255,0.2)" }}>
+        <div className="ms-auto pe-3 d-flex align-items-center">
+          <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
             {msg.responses!.length}-way compare
           </span>
         </div>
       </div>
 
-      {/* Active tab content */}
-      <div style={{ padding: "12px 16px", borderLeft: "2px solid rgba(255,255,255,0.1)" }}>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: "rgba(255,255,255,0.25)", marginBottom: "6px" }}>
-          [{msg.responses![activeTab].model}]
+      <div style={{ padding: "12px 16px" }}>
+        <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "8px" }}>
+          {msg.responses![activeTab].model}
         </div>
         {msg.responses![activeTab].content ? (
           <MarkdownRenderer content={msg.responses![activeTab].content} />
         ) : (
-          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.85rem" }}>waiting...</span>
+          <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>Waiting...</span>
         )}
       </div>
     </div>
@@ -147,49 +121,34 @@ function CompareMessage({ msg }: { msg: Message }) {
 
 function PipelineMessage({ msg }: { msg: Message }) {
   return (
-    <div className="mb-3" style={{ border: "1px solid rgba(139,92,246,0.15)", borderRadius: "6px", overflow: "hidden" }}>
-      {/* Pipeline header */}
+    <div className="mb-3" style={{ border: "1px solid var(--brand-subtle)", borderRadius: "8px", overflow: "hidden" }}>
       <div
         className="d-flex align-items-center px-3 py-2"
-        style={{ background: "rgba(139,92,246,0.06)", borderBottom: "1px solid rgba(139,92,246,0.1)" }}
+        style={{ background: "var(--bg-card)", borderBottom: "1px solid var(--border-subtle)" }}
       >
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: "var(--brand-purple)" }}>
-          pipeline:{" "}
+        <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+          Pipeline:{" "}
           {msg.pipeline!.map((m, i) => (
             <span key={m}>
-              <span style={{ color: "rgba(255,255,255,0.5)" }}>{m.replace("claude-", "").replace("deepseek-", "ds-")}</span>
-              {i < msg.pipeline!.length - 1 && <span style={{ color: "rgba(255,255,255,0.2)" }}> → </span>}
+              <span style={{ fontWeight: 500 }}>{m.replace("claude-", "").replace("deepseek-", "ds-")}</span>
+              {i < msg.pipeline!.length - 1 && <span style={{ color: "var(--text-muted)" }}> → </span>}
             </span>
           ))}
         </span>
       </div>
 
-      {/* Responses in chain */}
       <div style={{ padding: "8px 16px" }}>
         {msg.responses!.map((r, i) => (
           <div key={r.model} style={{ marginBottom: i < msg.responses!.length - 1 ? "12px" : 0 }}>
-            <div
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.7rem",
-                color: "rgba(255,255,255,0.25)",
-                marginBottom: "4px",
-                padding: "2px 8px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: "3px",
-                display: "inline-block",
-              }}
-            >
-              {i === 0 ? "── " : "── "}
-              {r.model.replace("claude-", "").replace("deepseek-", "ds-")}
-              {i === 0 ? " (draft)" : " (improve)"}
+            <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "4px" }}>
+              {r.model.replace("claude-", "").replace("deepseek-", "ds-")} {i === 0 ? "(draft)" : "(improved)"}
             </div>
             {r.content ? (
-              <div style={{ borderLeft: "2px solid rgba(255,255,255,0.08)", paddingLeft: "12px" }}>
+              <div style={{ borderLeft: "2px solid var(--border)", paddingLeft: "12px" }}>
                 <MarkdownRenderer content={r.content} />
               </div>
             ) : (
-              <div style={{ color: "rgba(255,255,255,0.15)", fontSize: "0.85rem", paddingLeft: "12px" }}>waiting...</div>
+              <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", paddingLeft: "12px" }}>Waiting...</div>
             )}
           </div>
         ))}

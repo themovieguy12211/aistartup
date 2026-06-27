@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth-helpers";
+import { requireUser, getFreeTokensRemaining } from "@/lib/auth-helpers";
 import { createServerSupabase } from "@/lib/supabase-server";
 
 export async function GET() {
@@ -13,8 +13,9 @@ export async function GET() {
     const totalRequests = records?.length || 0;
     const totalTokens = records?.reduce((s, r) => s + (r.tokens_in || 0) + (r.tokens_out || 0), 0) || 0;
     const totalCost = records?.reduce((s, r) => s + (r.cost || 0), 0) || 0;
+    const dailyFreeTokens = await getFreeTokensRemaining(user.id as string);
 
-    return NextResponse.json({ totalRequests, totalTokens, totalCost, activeKeys: activeKeys || 0, credits: user.credits });
+    return NextResponse.json({ totalRequests, totalTokens, totalCost, activeKeys: activeKeys || 0, credits: user.credits, dailyFreeTokens });
   } catch (e) {
     if ((e as Error).message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });

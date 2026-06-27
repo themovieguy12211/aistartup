@@ -64,7 +64,7 @@ function extractTitle(html: string): string {
 
 async function fetchPage(url: string, retries = 1): Promise<{ title: string; content: string } | null> {
   const userAgents = [
-    "Mozilla/5.0 (compatible; DagrAI/1.0; +https://dagrai.dev)",
+    "Mozilla/5.0 (compatible; DagrAI/1.0; +https://dagrai.xyz)",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
   ];
 

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createServiceSupabase } from "@/lib/supabase-server";
 import { calculateCost, getModelPricing } from "@/lib/pricing";
+import { useFreeTokens, getFreeTokensRemaining } from "@/lib/auth-helpers";
 import { apiRateLimit } from "@/lib/rate-limit";
 import crypto from "crypto";
 
@@ -46,10 +47,15 @@ export async function POST(req: NextRequest) {
     if (!profile) return Response.json({ error: "Account not found" }, { status: 401 });
 
     await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", apiKey.id);
-    if (profile.credits <= 0) return Response.json({ error: "Insufficient credits", code: "insufficient_credits" }, { status: 402 });
+    if (profile.credits <= 0) {
+      const freeRemaining = await getFreeTokensRemaining(profile.id);
+      if (freeRemaining <= 0) {
+        return Response.json({ error: "Insufficient credits", code: "insufficient_credits" }, { status: 402 });
+      }
+    }
 
     const body = await req.json();
-    const { model = "deepseek-chat", messages, stream = false } = body;
+    const { model = "claude-sonnet-4-6", messages, stream = false } = body;
     if (!messages?.length) return Response.json({ error: "Messages array required" }, { status: 400 });
 
     const config = getProviderConfig(model);
@@ -75,7 +81,10 @@ export async function POST(req: NextRequest) {
       const bodySize = JSON.stringify(body).length;
       const estimatedInputTokens = Math.ceil(bodySize / 4);
       const estimatedOutputTokens = 2000;
-      const cost = calculateCost(model, estimatedInputTokens, estimatedOutputTokens);
+      const totalTokens = estimatedInputTokens + estimatedOutputTokens;
+      const { chargeableTokens } = await useFreeTokens(profile.id, totalTokens);
+      const scale = totalTokens > 0 ? chargeableTokens / totalTokens : 1;
+      const cost = calculateCost(usedModel, estimatedInputTokens * scale, estimatedOutputTokens * scale);
       const nc = +(profile.credits - cost).toFixed(8);
       await supabase.from("profiles").update({ credits: nc < 0 ? 0 : nc }).eq("id", apiKey.user_id);
       await supabase.from("usage_records").insert({
@@ -88,13 +97,16 @@ export async function POST(req: NextRequest) {
     const data = await providerRes.json();
     const tokensIn = data.usage?.prompt_tokens || 0;
     const tokensOut = data.usage?.completion_tokens || 0;
-    const cost = calculateCost(model, tokensIn, tokensOut);
+    const totalTokens = tokensIn + tokensOut;
+    const { chargeableTokens } = await useFreeTokens(profile.id, totalTokens);
+    const scale = totalTokens > 0 ? chargeableTokens / totalTokens : 1;
+    const cost = calculateCost(usedModel, tokensIn * scale, tokensOut * scale);
     const newCredits = +(profile.credits - cost).toFixed(8);
 
     await supabase.from("profiles").update({ credits: newCredits }).eq("id", apiKey.user_id);
     await supabase.from("usage_records").insert({ model: usedModel, provider: usedProvider, tokens_in: tokensIn, tokens_out: tokensOut, cost, api_key_id: apiKey.id, user_id: apiKey.user_id });
 
-    const pricing = getModelPricing(model);
+    const pricing = getModelPricing(usedModel);
     data.dagrai = { model: usedModel, provider: usedProvider, cost: `$${cost.toFixed(6)}`, rate: `$${pricing.pricePerMIn}/M in, $${pricing.pricePerMOut}/M out`, credits_remaining: newCredits, latency_ms: Date.now() - startTime };
 
     return Response.json(data);

@@ -6,8 +6,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   email TEXT UNIQUE,
   name TEXT,
-  credits FLOAT DEFAULT 1.0,          -- $1.00 free credits
+  credits FLOAT DEFAULT 0.0,          -- purchased credits (no signup bonus)
   role TEXT DEFAULT 'user',           -- 'user' or 'admin'
+  daily_tokens_used INTEGER DEFAULT 0,
+  daily_tokens_date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -65,7 +67,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, email, name, credits, role)
-  VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)), 1.0, 'user');
+  VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)), 0.0, 'user');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -96,6 +98,23 @@ CREATE POLICY "Users can read own profile" ON public.profiles
   FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
+
+-- Prevent users from modifying their own credits
+-- Only the service_role (backend API) can change credit balances
+CREATE OR REPLACE FUNCTION public.prevent_credit_self_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.credits != OLD.credits AND current_setting('role') != 'service_role' THEN
+    RAISE EXCEPTION 'Credits can only be modified by the API.';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_prevent_credit_self_update ON public.profiles;
+CREATE TRIGGER trg_prevent_credit_self_update
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_credit_self_update();
 
 -- API Keys: users can CRUD their own keys
 CREATE POLICY "Users can read own keys" ON public.api_keys
@@ -145,3 +164,24 @@ DROP TRIGGER IF EXISTS set_timestamp ON public.conversations;
 CREATE TRIGGER set_timestamp
   BEFORE UPDATE ON public.conversations
   FOR EACH ROW EXECUTE FUNCTION public.update_timestamp();
+
+-- User Memories
+CREATE TABLE IF NOT EXISTS public.user_memories (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  key TEXT NOT NULL,
+  value TEXT NOT NULL,
+  source TEXT DEFAULT 'auto', -- 'auto' or 'manual'
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, key)
+);
+CREATE INDEX IF NOT EXISTS idx_memories_user ON public.user_memories(user_id);
+ALTER TABLE public.user_memories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can CRUD own memories" ON public.user_memories
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Daily free tokens (migration for existing databases)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS daily_tokens_used INTEGER DEFAULT 0;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS daily_tokens_date DATE DEFAULT CURRENT_DATE;
+CREATE INDEX IF NOT EXISTS idx_profiles_daily_date ON public.profiles(daily_tokens_date);

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createServiceSupabase } from "@/lib/supabase-server";
 import { calculateCost, getModelPricing } from "@/lib/pricing";
+import { useFreeTokens, getFreeTokensRemaining } from "@/lib/auth-helpers";
 import { apiRateLimit } from "@/lib/rate-limit";
 import crypto from "crypto";
 
@@ -89,10 +90,13 @@ export async function POST(req: NextRequest) {
 
     const { data: profile } = await supabase.from("profiles").select("*").eq("id", apiKey.user_id).single(); if (!profile) return Response.json({ error: "Account not found" }, { status: 401 });
     if (profile.credits <= 0) {
-      return Response.json(
-        { type: "error", error: { type: "permission_error", message: "Insufficient credits. Add credits to continue." } },
-        { status: 402 }
-      );
+      const freeRemaining = await getFreeTokensRemaining(profile.id);
+      if (freeRemaining <= 0) {
+        return Response.json(
+          { type: "error", error: { type: "permission_error", message: "Insufficient credits. Add credits to continue." } },
+          { status: 402 }
+        );
+      }
     }
 
     await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", apiKey.id);
@@ -155,8 +159,11 @@ export async function POST(req: NextRequest) {
               }
             }
 
-            // Deduct exact tokens from credits
-            const cost = calculateCost(model, inputTokens || Math.ceil(JSON.stringify(body).length / 4), outputTokens || 2000);
+            // Apply daily free tokens, then deduct remaining from credits
+            const tokensUsed = (inputTokens || Math.ceil(JSON.stringify(body).length / 4)) + (outputTokens || 2000);
+            const { chargeableTokens } = await useFreeTokens(profile.id, tokensUsed);
+            const scale = tokensUsed > 0 ? chargeableTokens / tokensUsed : 1;
+            const cost = calculateCost(usedModel, (inputTokens || 0) * scale, (outputTokens || 0) * scale);
             const nc = +(profile.credits - cost).toFixed(8);
             await supabase.from("profiles").update({ credits: nc < 0 ? 0 : nc }).eq("id", apiKey.user_id);
             await supabase.from("usage_records").insert({
@@ -184,13 +191,16 @@ export async function POST(req: NextRequest) {
     // Non-streaming: parse, deduct, return
     const data = await providerRes.json();
 
-    // Estimate tokens from usage or content length
+    // Apply daily free tokens, then deduct remaining from credits
     const tokensIn = data.usage?.input_tokens || 500;
     const tokensOut = data.usage?.output_tokens || 500;
-    const cost = calculateCost(model, tokensIn, tokensOut);
+    const totalTokens = tokensIn + tokensOut;
+    const { chargeableTokens } = await useFreeTokens(profile.id, totalTokens);
+    const scale = totalTokens > 0 ? chargeableTokens / totalTokens : 1;
+    const cost = calculateCost(usedModel, tokensIn * scale, tokensOut * scale);
     const newCredits = +(profile.credits - cost).toFixed(8);
 
-    await supabase.from("profiles").update({ credits: newCredits }).eq("id", apiKey.user_id);
+    await supabase.from("profiles").update({ credits: newCredits < 0 ? 0 : newCredits }).eq("id", apiKey.user_id);
     await supabase.from("usage_records").insert({
       model: usedModel, provider, tokens_in: tokensIn, tokens_out: tokensOut, cost,
       api_key_id: apiKey.id, user_id: apiKey.user_id,

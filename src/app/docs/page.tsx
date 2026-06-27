@@ -12,14 +12,15 @@ function CopyButton({ code }: { code: string }) {
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-      className="btn btn-sm"
       style={{
         position: "absolute", top: "8px", right: "8px",
-        background: copied ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.05)",
-        border: copied ? "1px solid rgba(34,197,94,0.3)" : "1px solid rgba(255,255,255,0.1)",
-        color: copied ? "#22c55e" : "rgba(255,255,255,0.4)",
-        fontSize: "0.75rem", fontFamily: "'JetBrains Mono', monospace",
-        transition: "all 0.2s",
+        background: "var(--bg-elevated)",
+        border: "1px solid var(--border)",
+        color: copied ? "#22c55e" : "var(--text-muted)",
+        fontSize: "0.72rem",
+        borderRadius: "4px",
+        padding: "2px 8px",
+        cursor: "pointer",
       }}
     >
       {copied ? "✓ Copied!" : "📋"}
@@ -60,10 +61,10 @@ const integrations = [
     lang: "~/.claude/settings.json",
     code: `{
   "env": {
-    "ANTHROPIC_BASE_URL": "https://dagrai.vercel.app/api",
+    "ANTHROPIC_BASE_URL": "https://api.dagrai.xyz/api",
     "ANTHROPIC_AUTH_TOKEN": "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "ANTHROPIC_MODEL": "claude-sonnet-4-6",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-8",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-6",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5",
     "CLAUDE_CODE_SUBAGENT_MODEL": "deepseek-v4-flash",
@@ -76,7 +77,7 @@ const integrations = [
     icon: "📝", title: "Cursor", badge: "OpenAI",
     desc: "Add as a custom model in Cursor settings. OpenAI-compatible endpoint.",
     lang: "Cursor Settings",
-    code: `API Base URL: https://dagrai.vercel.app/api/v1
+    code: `API Base URL: https://api.dagrai.xyz/api/v1
 API Key: sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 Model ID: deepseek-v4-pro`,
   },
@@ -89,7 +90,7 @@ Model ID: deepseek-v4-pro`,
     "title": "DagrAI V4 Pro",
     "provider": "openai",
     "model": "deepseek-v4-pro",
-    "apiBase": "https://dagrai.vercel.app/api/v1",
+    "apiBase": "https://api.dagrai.xyz/api/v1",
     "apiKey": "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   }]
 }`,
@@ -98,7 +99,7 @@ Model ID: deepseek-v4-pro`,
     icon: "⚡", title: "Aider", badge: "OpenAI",
     desc: "AI pair programming. Switch models by changing --model flag. All models supported.",
     lang: "Terminal",
-    code: `export OPENAI_API_BASE=https://dagrai.vercel.app/api/v1
+    code: `export OPENAI_API_BASE=https://api.dagrai.xyz/api/v1
 export OPENAI_API_KEY=sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # Any model works — DeepSeek, Claude, Llama, Mistral
 aider --model deepseek-v4-pro       # fast + 1M context
@@ -112,7 +113,7 @@ aider --model deepseek-reasoner     # deep reasoning`,
     code: `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://dagrai.vercel.app/api/v1",
+    base_url="https://api.dagrai.xyz/api/v1",
     api_key="sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 )
 
@@ -129,7 +130,7 @@ print(response.choices[0].message.content)`,
     code: `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://dagrai.vercel.app/api/v1",
+  baseURL: "https://api.dagrai.xyz/api/v1",
   apiKey: "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 });
 
@@ -146,7 +147,7 @@ const response = await client.chat.completions.create({
 import { generateText } from "ai";
 
 const dagrai = createOpenAI({
-  baseURL: "https://dagrai.vercel.app/api/v1",
+  baseURL: "https://api.dagrai.xyz/api/v1",
   apiKey: "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 });
 
@@ -215,7 +216,7 @@ export default function DocsPage() {
                 <Badge bg="secondary" className="mb-2">1</Badge>{" "}
                 <span className="fw-semibold">Get an API key</span>
                 <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem", marginTop: "4px" }}>
-                  Sign up at dagrai.dev → Dashboard → API Keys → Create. Copy your key (shown once).
+                  Sign up at dagrai.xyz → Dashboard → API Keys → Create. Copy your key (shown once).
                 </p>
               </div>
               <div className="mb-3">
@@ -224,7 +225,7 @@ export default function DocsPage() {
               </div>
               <CodeBlock
                 lang="bash"
-                code={`curl https://dagrai.vercel.app/api/v1/chat/completions \\
+                code={`curl https://api.dagrai.xyz/api/v1/chat/completions \\
   -H "Authorization: Bearer sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -268,7 +269,7 @@ export default function DocsPage() {
             <strong style={{ color: "var(--brand-purple)" }}>Available models — swap any ID in the examples below:</strong><br/>
             <div className="mt-2" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.8rem", lineHeight: "2" }}>
               <code style={{ color: "#22c55e" }}>deepseek-v4-pro</code> · <code style={{ color: "#22c55e" }}>deepseek-v4-flash</code> · <code style={{ color: "#22c55e" }}>deepseek-reasoner</code> · <code style={{ color: "#22c55e" }}>deepseek-chat</code><br/>
-              <code style={{ color: "#8b5cf6" }}>claude-opus-4-8</code> ⚡ · <code style={{ color: "#8b5cf6" }}>claude-sonnet-4-6</code> ⚡ · <code style={{ color: "#8b5cf6" }}>claude-haiku-4-5</code> ⚡<br/>
+              <code style={{ color: "#8b5cf6" }}>claude-opus-4-6</code> ⚡ · <code style={{ color: "#8b5cf6" }}>claude-sonnet-4-6</code> ⚡ · <code style={{ color: "#8b5cf6" }}>claude-haiku-4-5</code> ⚡<br/>
               <code style={{ color: "#eab308" }}>llama-4-maverick</code> ⚡ · <code style={{ color: "#eab308" }}>llama-3.1-70b</code> ⚡ · <code style={{ color: "#eab308" }}>mistral-large</code> ⚡
             </div>
             <div className="mt-2" style={{ fontSize: "0.78rem" }}></div>

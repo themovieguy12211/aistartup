@@ -7,11 +7,11 @@ import { useEffect } from "react";
 import { Container, Nav, Spinner } from "react-bootstrap";
 
 const navItems = [
-  { href: "/dashboard", label: "Overview", icon: "📊" },
-  { href: "/dashboard/keys", label: "API Keys", icon: "🔑" },
-  { href: "/", label: "Chat", icon: "💬" },
-  { href: "/dashboard/billing", label: "Billing", icon: "💳" },
-  { href: "/dashboard/settings", label: "Settings", icon: "⚙️" },
+  { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/keys", label: "API Keys" },
+  { href: "/", label: "Chat" },
+  { href: "/dashboard/billing", label: "Billing" },
+  { href: "/dashboard/settings", label: "Settings" },
 ];
 
 export default function DashboardLayout({
@@ -32,7 +32,7 @@ export default function DashboardLayout({
   if (status === "loading") {
     return (
       <div className="d-flex justify-content-center align-items-center min-vh-100">
-        <Spinner animation="border" style={{ color: "var(--brand-purple)" }} />
+        <Spinner animation="border" style={{ color: "var(--brand)" }} />
       </div>
     );
   }
@@ -41,24 +41,16 @@ export default function DashboardLayout({
 
   return (
     <div className="d-flex" style={{ minHeight: "100vh" }}>
-      {/* Sidebar */}
       <div
         className="sidebar d-flex flex-column flex-shrink-0 p-3"
-        style={{ width: "240px" }}
+        style={{ width: "220px" }}
       >
         <Link
           href="/"
           className="text-decoration-none mb-4 px-2"
-          style={{
-            fontWeight: 700,
-            fontSize: "1.1rem",
-            background: "var(--brand-gradient)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}
+          style={{ fontWeight: 600, fontSize: "1rem", color: "var(--text-primary)" }}
         >
-          ◆ DagrAI
+          DagrAI
         </Link>
 
         <Nav className="flex-column">
@@ -68,27 +60,26 @@ export default function DashboardLayout({
               as={Link}
               href={item.href}
               className={pathname === item.href ? "active" : ""}
+              style={{ fontSize: "0.9rem" }}
             >
-              <span className="me-2">{item.icon}</span>
               {item.label}
             </Nav.Link>
           ))}
         </Nav>
 
-        <div className="mt-auto pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="px-2 mb-2" style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)" }}>
+        <div className="mt-auto pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+          <div className="px-2 mb-2" style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
             {session.user?.email}
           </div>
           <button
             onClick={() => signOut().then(() => { window.location.href = "/"; })}
-            className="btn btn-sm btn-outline-danger w-100"
+            style={{ fontSize: "0.82rem", background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)", borderRadius: "6px", padding: "4px 12px", cursor: "pointer", width: "100%" }}
           >
             Sign Out
           </button>
         </div>
       </div>
 
-      {/* Main content */}
       <div className="flex-grow-1 p-4" style={{ overflow: "auto" }}>
         {children}
       </div>

@@ -42,8 +42,8 @@ function CodeBlock({ raw }: { raw: string }) {
   return (
     <div
       style={{
-        background: "rgba(0,0,0,0.4)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--bg-primary)",
+        border: "1px solid var(--border)",
         borderRadius: "6px",
         margin: "10px 0",
         overflow: "hidden",
@@ -52,27 +52,25 @@ function CodeBlock({ raw }: { raw: string }) {
       <div
         className="d-flex align-items-center justify-content-between px-3 py-2"
         style={{
-          background: "rgba(255,255,255,0.03)",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
-          fontFamily: "'JetBrains Mono', monospace",
+          background: "var(--bg-card)",
+          borderBottom: "1px solid var(--border-subtle)",
           fontSize: "0.75rem",
         }}
       >
-        <span style={{ color: "rgba(255,255,255,0.3)" }}>{lang || "code"}</span>
+        <span style={{ color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>{lang || "code"}</span>
         <button
           onClick={handleCopy}
           style={{
-            background: copied ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.05)",
-            border: copied ? "1px solid rgba(34,197,94,0.3)" : "1px solid rgba(255,255,255,0.1)",
-            color: copied ? "#22c55e" : "rgba(255,255,255,0.5)",
-            padding: "2px 10px",
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--border)",
+            color: "var(--text-secondary)",
+            fontSize: "0.72rem",
             borderRadius: "4px",
+            padding: "2px 8px",
             cursor: "pointer",
-            fontSize: "0.75rem",
-            fontFamily: "'JetBrains Mono', monospace",
           }}
         >
-          {copied ? "✓ Copied!" : "📋 Copy"}
+          {copied ? "Copied" : "Copy"}
         </button>
       </div>
       <pre
@@ -82,7 +80,7 @@ function CodeBlock({ raw }: { raw: string }) {
           overflow: "auto",
           fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
           fontSize: "0.82rem",
-          color: "rgba(255,255,255,0.75)",
+          color: "var(--text-primary)",
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
           lineHeight: 1.5,
@@ -134,7 +132,7 @@ function TextBlock({ text }: { text: string }) {
     // Horizontal rule
     if (line.trim() === "---" || line.trim() === "***") {
       elements.push(
-        <hr key={i} style={{ borderColor: "rgba(255,255,255,0.08)", margin: "10px 0" }} />
+        <hr key={i} style={{ borderColor: "var(--border-subtle)", margin: "10px 0" }} />
       );
       continue;
     }
@@ -143,7 +141,7 @@ function TextBlock({ text }: { text: string }) {
     if (/^[\-\*]\s/.test(line)) {
       elements.push(
         <div key={i} style={{ paddingLeft: "16px", marginBottom: "2px" }}>
-          <span style={{ color: "rgba(255,255,255,0.25)", marginRight: "6px" }}>›</span>
+          <span style={{ color: "var(--text-muted)", marginRight: "6px" }}>›</span>
           {renderInline(line.slice(2))}
         </div>
       );
@@ -156,7 +154,7 @@ function TextBlock({ text }: { text: string }) {
       const rest = line.slice(num.length + 1);
       elements.push(
         <div key={i} style={{ paddingLeft: "8px", marginBottom: "2px" }}>
-          <span style={{ color: "rgba(255,255,255,0.25)", marginRight: "6px" }}>{num}</span>
+          <span style={{ color: "var(--text-muted)", marginRight: "6px" }}>{num}</span>
           {renderInline(rest)}
         </div>
       );
@@ -184,7 +182,7 @@ function renderInline(text: string): React.ReactNode {
         }
         // Italic *...*
         if (token.startsWith("*") && token.endsWith("*") && token.length > 2) {
-          return <em key={i} style={{ color: "rgba(255,255,255,0.6)" }}>{token.slice(1, -1)}</em>;
+          return <em key={i} style={{ color: "var(--text-secondary)" }}>{token.slice(1, -1)}</em>;
         }
         // Inline code `...`
         if (token.startsWith("`") && token.endsWith("`")) {
@@ -192,12 +190,12 @@ function renderInline(text: string): React.ReactNode {
             <code
               key={i}
               style={{
-                background: "rgba(255,255,255,0.06)",
+                background: "var(--bg-elevated)",
                 padding: "2px 5px",
                 borderRadius: "3px",
                 fontSize: "0.85em",
                 fontFamily: "'JetBrains Mono', monospace",
-                color: "#e4e4e7",
+                color: "var(--text-primary)",
               }}
             >
               {token.slice(1, -1)}

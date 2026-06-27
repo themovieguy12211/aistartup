@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Container, Form, Button, Alert, Spinner } from "react-bootstrap";
+import { Container, Form, Alert, Spinner } from "react-bootstrap";
 import Navbar from "@/components/Navbar";
 import { createClient } from "@/lib/supabase";
 
@@ -40,8 +40,8 @@ export default function LoginPage() {
       <Navbar />
       <Container className="py-5" style={{ maxWidth: "440px" }}>
         <div className="text-center mb-4">
-          <h2 className="fw-bold">Welcome Back</h2>
-          <p style={{ color: "rgba(255,255,255,0.5)" }}>
+          <h2 className="fw-semibold">Welcome back</h2>
+          <p style={{ color: "var(--text-secondary)" }}>
             Sign in to your DagrAI account
           </p>
         </div>
@@ -61,7 +61,6 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-dark border-secondary text-light"
             />
           </Form.Group>
 
@@ -73,17 +72,21 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="bg-dark border-secondary text-light"
             />
+            <div className="text-end mt-1">
+              <Link href="/forgot-password" style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                Forgot password?
+              </Link>
+            </div>
           </Form.Group>
 
-          <Button type="submit" className="btn-primary w-100 py-2" disabled={loading}>
+          <button type="submit" style={{ background: "var(--brand)", color: "#fff", border: "none", borderRadius: "6px", padding: "10px 0", fontWeight: 500, fontSize: "0.95rem", cursor: loading ? "default" : "pointer", width: "100%", opacity: loading ? 0.7 : 1 }} disabled={loading}>
             {loading ? <><Spinner size="sm" className="me-2" />Signing in...</> : "Sign In"}
-          </Button>
+          </button>
 
-          <div className="text-center mt-3" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <div className="text-center mt-3" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
             Don&apos;t have an account?{" "}
-            <Link href="/signup" style={{ color: "var(--brand-purple)" }}>Sign up</Link>
+            <Link href="/signup" style={{ color: "var(--brand)" }}>Sign up</Link>
           </div>
         </Form>
       </Container>

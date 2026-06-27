@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { requireUser } from "@/lib/auth-helpers";
-import { createServerSupabase } from "@/lib/supabase-server";
+import { requireUser, useFreeTokens, getFreeTokensRemaining } from "@/lib/auth-helpers";
+import { createServerSupabase, createServiceSupabase } from "@/lib/supabase-server";
 import { calculateCost } from "@/lib/pricing";
 
 const TOOLS = [
@@ -104,11 +104,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const user = await requireUser();
     const supabase = await createServerSupabase();
+    const serviceSupabase = await createServiceSupabase(); // for credit writes (bypasses RLS)
     const { id } = await params;
     const { model, content, displayContent } = await req.json();
 
     if (!content?.trim()) return Response.json({ error: "Message required" }, { status: 400 });
-    if (user.credits <= 0) return Response.json({ error: "Out of credits!", code: "insufficient_credits" }, { status: 402 });
+    // Only block if both credits and free daily tokens are exhausted
+    if (user.credits <= 0) {
+      const freeRemaining = await getFreeTokensRemaining(user.id);
+      if (freeRemaining <= 0) {
+        return Response.json({ error: "Out of credits and daily free tokens!", code: "insufficient_credits" }, { status: 402 });
+      }
+    }
 
     // Save the clean user message (without search context)
     const cleanContent = displayContent || content.trim();
@@ -116,7 +123,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { data: conversation } = await supabase.from("conversations").select("*").eq("id", id).eq("user_id", user.id).single();
     if (!conversation) return Response.json({ error: "Not found" }, { status: 404 });
 
-    const selectedModel = model || "deepseek-chat";
+    const selectedModel = model || "claude-sonnet-4-6";
 
     // Save user message
     await supabase.from("messages").insert({
@@ -232,9 +239,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             break;
           }
 
-          // Save assistant message
-          const cost = Math.max(calculateCost(selectedModel, totalTokensIn, totalTokensOut), 0.0001);
-          const newCredits = +(user.credits - cost).toFixed(8);
+          // Apply daily free tokens first, then charge credits for the rest
+          const totalTokens = totalTokensIn + totalTokensOut;
+          const { chargeableTokens } = await useFreeTokens(user.id, totalTokens);
+          const scale = totalTokens > 0 ? chargeableTokens / totalTokens : 1;
+          const cost = Math.max(calculateCost(selectedModel, totalTokensIn * scale, totalTokensOut * scale), 0);
+          const newCredits = cost > 0 ? +(user.credits - cost).toFixed(8) : user.credits;
 
           await supabase.from("messages").insert({
             role: "assistant", content: fullContent, model: selectedModel,
@@ -242,7 +252,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             conversation_id: id, user_id: user.id,
           });
 
-          await supabase.from("profiles").update({ credits: newCredits < 0 ? 0 : newCredits }).eq("id", user.id);
+          await serviceSupabase.from("profiles").update({ credits: newCredits < 0 ? 0 : newCredits }).eq("id", user.id);
           await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", id);
 
           // Auto-title — strip system prompt if present

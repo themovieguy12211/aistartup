@@ -33,12 +33,12 @@ export default function AdminOverview() {
   }
 
   const cards = [
-    { title: "Total Users", value: stats?.totalUsers ?? "—", icon: "👥", sub: `${stats?.adminCount ?? 0} admins` },
-    { title: "Total API Calls", value: stats?.totalCalls?.toLocaleString() ?? "—", icon: "📨", sub: "All time" },
-    { title: "Platform Revenue", value: stats?.totalRevenue != null ? `$${stats.totalRevenue.toFixed(4)}` : "—", icon: "💰", sub: "User charges" },
-    { title: "Platform Cost", value: stats?.totalCost != null ? `$${stats.totalCost.toFixed(4)}` : "—", icon: "📉", sub: "What we pay providers" },
-    { title: "Gross Profit", value: stats?.totalRevenue != null && stats?.totalCost != null ? `$${(stats.totalRevenue - stats.totalCost).toFixed(4)}` : "—", icon: "📈", sub: "Revenue − Cost" },
-    { title: "Active API Keys", value: stats?.activeKeys ?? "—", icon: "🔑", sub: "Currently active" },
+    { title: "Total Users", value: stats?.totalUsers ?? "—", sub: `${stats?.adminCount ?? 0} admins` },
+    { title: "Total API Calls", value: stats?.totalCalls?.toLocaleString() ?? "—", sub: "All time" },
+    { title: "Platform Revenue", value: stats?.totalRevenue != null ? `$${stats.totalRevenue.toFixed(4)}` : "—", sub: "User charges" },
+    { title: "Platform Cost", value: stats?.totalCost != null ? `$${stats.totalCost.toFixed(4)}` : "—", sub: "Provider costs" },
+    { title: "Gross Profit", value: stats?.totalRevenue != null && stats?.totalCost != null ? `$${(stats.totalRevenue - stats.totalCost).toFixed(4)}` : "—", sub: "Revenue − Cost" },
+    { title: "Active API Keys", value: stats?.activeKeys ?? "—", sub: "Currently active" },
   ];
 
   return (
@@ -46,7 +46,7 @@ export default function AdminOverview() {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 className="fw-bold mb-1">Admin Overview</h2>
-          <p style={{ color: "rgba(255,255,255,0.5)", margin: 0 }}>
+          <p style={{ color: "var(--text-secondary)", margin: 0 }}>
             Platform-wide metrics and health.
           </p>
         </div>
@@ -57,10 +57,9 @@ export default function AdminOverview() {
           <Col md={4} key={i} className="mb-3">
             <Card className="h-100">
               <Card.Body>
-                <div className="fs-3 mb-2">{c.icon}</div>
-                <div className="fs-4 fw-bold">{c.value}</div>
-                <div className="fw-semibold" style={{ fontSize: "0.9rem" }}>{c.title}</div>
-                <div style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.8rem" }}>{c.sub}</div>
+                <div className="fs-4 fw-semibold">{c.value}</div>
+                <div style={{ fontSize: "0.9rem", fontWeight: 500 }}>{c.title}</div>
+                <div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>{c.sub}</div>
               </Card.Body>
             </Card>
           </Col>

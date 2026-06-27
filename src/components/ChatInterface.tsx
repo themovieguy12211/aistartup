@@ -6,6 +6,16 @@ import ChatWindow from "@/components/ChatWindow";
 import ChatInput from "@/components/ChatInput";
 import { shouldSearchWeb, shouldDeepResearch } from "@/lib/query-classifier";
 
+async function extractFactsWithAI(msg: string, reply: string): Promise<void> {
+  try {
+    await fetch("/api/memories/extract", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg, reply }),
+    });
+  } catch {}
+}
+
 function mergeReasoning(existing: string[], modelReasoning: string): string[] {
   if (!modelReasoning) return existing;
   const truncated = modelReasoning.length > 2000
@@ -117,12 +127,15 @@ async function streamOne(
   model: string, content: string, convId: string | null,
   onReasoning?: (r: string) => void,
   displayContent?: string,
+  onContent?: (text: string) => void,
+  signal?: AbortSignal,
 ): Promise<{ text: string; reasoning: string }> {
   if (!convId) throw new Error("No conversation");
   const res = await fetch(`/api/conversations/${convId}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, content, displayContent }),
+    signal,
   });
   if (!res.ok) throw new Error(`${model}: ${res.status}`);
   const reader = res.body?.getReader();
@@ -138,7 +151,10 @@ async function streamOne(
       if (line.startsWith("data: ") && line !== "data: [DONE]") {
         try {
           const p = JSON.parse(line.slice(6));
-          if (p.choices?.[0]?.delta?.content) full += p.choices[0].delta.content;
+          if (p.choices?.[0]?.delta?.content) {
+            full += p.choices[0].delta.content;
+            if (onContent) onContent(full);
+          }
           if (p.choices?.[0]?.delta?.reasoning_content) {
             reasoning += p.choices[0].delta.reasoning_content;
             if (onReasoning) onReasoning(reasoning);
@@ -147,7 +163,6 @@ async function streamOne(
             reasoning = p.dagrai_reasoning;
             if (onReasoning) onReasoning(reasoning);
           }
-          // Capture function calling events as reasoning
           if (p.dagrai_tool_call) {
             const tc = `🔧 Calling ${p.dagrai_tool_call.name}(${Object.values(p.dagrai_tool_call.args || {}).join(", ")})...`;
             reasoning = reasoning ? reasoning + "\n" + tc : tc;
@@ -177,6 +192,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const sendingRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -228,6 +244,13 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
   ) {
     sendingRef.current = true;
 
+    // Cancel any in-flight request
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     // Use the model the user selected — the toggle bar IS the model choice
     const firstModel = models[0];
 
@@ -277,7 +300,23 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
     }
     // Collect reasoning steps for collapsible display
     const reasoning = [...reasoningSteps];
-    const fullPrompt = searchContext ? `${content}${searchContext}` : content;
+    // Fetch user memories for context
+    let memoryContext = "";
+    try {
+      const memRes = await fetch("/api/memories");
+      if (memRes.ok) {
+        const memData = await memRes.json();
+        if (memData.memories?.length) {
+          memoryContext = "\n\n[User profile (from memory):\n" +
+            memData.memories.map((m: { key: string; value: string }) => `- ${m.key}: ${m.value}`).join("\n") +
+            "\n]\n\nUse this context to personalize your responses. Reference it naturally when relevant.";
+        }
+      }
+    } catch {}
+
+    const fullPrompt = searchContext
+      ? `${content}${memoryContext}${searchContext}`
+      : `${content}${memoryContext}`;
 
     setLoading(true);
 
@@ -301,8 +340,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
         };
         setMessages((prev) => [...prev, msgA]);
 
-        const { text: contentA, reasoning: rA } = await streamOne(firstModel, fullPrompt, targetId, undefined, content);
-        const pipeReasoning = mergeReasoning([...reasoning], rA);
+        const { text: contentA } = await streamOne(firstModel, fullPrompt, targetId, undefined, content, undefined, controller.signal);
 
         // Update with model A response
         setMessages((prev) => {
@@ -330,7 +368,7 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
         };
         setMessages((prev) => [...prev, msgB]);
 
-        const { text: contentB, reasoning: rB } = await streamOne(pipeModel, reviewPrompt, targetId, undefined, content);
+        const { text: contentB, reasoning: rB } = await streamOne(pipeModel, reviewPrompt, targetId, undefined, content, undefined, controller.signal);
 
         setMessages((prev) => {
           const copy = [...prev];
@@ -363,26 +401,23 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
         };
         setMessages((prev) => [...prev, placeholder]);
 
-        // Fire all in parallel
-        const promises = models.map((m) =>
-          streamOne(m, fullPrompt, targetId, undefined, content).then((r) => ({ model: m, content: r.text }))
-        );
-
-        // Stream updates — update as each resolves
+        // Fire all in parallel — update UI as each resolves
         const results: CompareResponse[] = [];
-        for (const p of promises) {
-          const r = await p;
-          results.push(r);
-          // Update in-place
-          setMessages((prev) => {
-            const copy = [...prev];
-            copy[copy.length - 1] = {
-              ...copy[copy.length - 1],
-              responses: [...results],
-            };
-            return copy;
-          });
-        }
+        await Promise.all(
+          models.map((m) =>
+            streamOne(m, fullPrompt, targetId, undefined, content, undefined, controller.signal).then((r) => {
+              results.push({ model: m, content: r.text });
+              setMessages((prev) => {
+                const copy = [...prev];
+                copy[copy.length - 1] = {
+                  ...copy[copy.length - 1],
+                  responses: [...results],
+                };
+                return copy;
+              });
+            })
+          )
+        );
 
         onCreditsChange();
         loadConversations();
@@ -396,13 +431,20 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
         const assistantMsg: Message = { role: "assistant", content: "", model: firstModel, reasoning };
         setMessages((prev) => [...prev, assistantMsg]);
 
-        const { text: result, reasoning: rSingle } = await streamOne(firstModel, fullPrompt, targetId, undefined, content);
+        const { text: result } = await streamOne(
+          firstModel, fullPrompt, targetId, undefined, content,
+          (streamed) => {
+            setMessages((prev) => {
+              const copy = [...prev];
+              copy[copy.length - 1] = { ...copy[copy.length - 1], content: streamed };
+              return copy;
+            });
+          },
+          controller.signal
+        );
 
-        setMessages((prev) => {
-          const copy = [...prev];
-          copy[copy.length - 1] = { ...copy[copy.length - 1], content: result };
-          return copy;
-        });
+        // AI-powered memory extraction (fire-and-forget)
+        extractFactsWithAI(content, result);
 
         // === DEEP RESEARCH: auto-verify claims with follow-up searches ===
         if (actuallyDeep && result) {
@@ -540,7 +582,7 @@ TASK: Rewrite your response using ONLY these verified results. You MUST:
             verifySteps.push(`synthesizing verified answer...`);
 
             // Second model pass for verified synthesis
-            const { text: refinedResult, reasoning: rRefined } = await streamOne(firstModel, verificationPrompt, targetId, undefined, content);
+            const { text: refinedResult, reasoning: rRefined } = await streamOne(firstModel, verificationPrompt, targetId, undefined, content, undefined, controller.signal);
 
             verifySteps.push(`${results.filter((r) => r.available).length}/${results.length} names available ✓`);
 
@@ -560,6 +602,7 @@ TASK: Rewrite your response using ONLY these verified results. You MUST:
         loadConversations();
       }
     } catch (err) {
+      if ((err as Error).name === "AbortError") return; // user cancelled — no error message
       setMessages((prev) => {
         const copy = [...prev];
         copy[copy.length - 1] = {
@@ -571,6 +614,7 @@ TASK: Rewrite your response using ONLY these verified results. You MUST:
     } finally {
       setLoading(false);
       sendingRef.current = false;
+      abortRef.current = null;
     }
   }
 
@@ -585,7 +629,7 @@ TASK: Rewrite your response using ONLY these verified results. You MUST:
       />
       <div className="flex-grow-1 d-flex flex-column" style={{ minWidth: 0 }}>
         <ChatWindow messages={messages} title={title} />
-        <ChatInput onSend={handleSend} loading={loading} credits={credits} />
+        <ChatInput onSend={handleSend} loading={loading} credits={credits} onCancel={() => abortRef.current?.abort()} />
       </div>
     </div>
   );

@@ -8,16 +8,16 @@ const tiers = [
   {
     name: "Free",
     price: "$0",
-    period: "",
-    desc: "$1.00 free credits on signup. No credit card required.",
+    period: "/month",
+    desc: "50,000 free tokens per day. No credit card required.",
     features: [
-      "$1.00 free credits (500-1000 messages)",
-      "Access to all 6 models",
-      "API key management",
+      "50,000 tokens/day — try every model, including Claude",
+      "Claude Opus, Sonnet, Haiku + DeepSeek, Llama, Mistral",
+      "API access included",
       "Usage dashboard",
-      "Hard cutoff when credits hit $0 — never overcharged",
+      "Never charged — hard cutoff when daily limit hit",
     ],
-    cta: "Get Free Credits",
+    cta: "Start Free",
     href: "/signup",
     popular: false,
   },
@@ -39,43 +39,34 @@ const tiers = [
   },
   {
     name: "Enterprise",
-    price: "Volume",
+    price: "Custom",
     period: "",
-    desc: "High volume? Self-hosted option available for AWS credit customers.",
+    desc: "For teams and platforms that need scale, security, and dedicated support.",
     features: [
-      "Dedicated infrastructure on your AWS account",
-      "Self-hosted inference via vLLM on EC2",
-      "Use your AWS credits for all inference",
-      "Custom model fine-tuning",
-      "SLA with 99.9% uptime",
-      "Slack support",
+      "Unlimited API requests",
+      "Volume discounts — the more you use, the less you pay",
+      "99.9% SLA with uptime guarantee",
+      "SSO / SAML / OIDC",
+      "Audit logs & compliance reporting",
+      "Dedicated Slack channel + priority support",
+      "Invoice billing (NET 30)",
     ],
-    cta: "Contact Us",
-    href: "mailto:enterprise@dagrai.dev",
+    cta: "Contact Sales",
+    href: "mailto:enterprise@dagrai.xyz",
     popular: false,
   },
 ];
 
 export default function PricingSection() {
   return (
-    <section className="py-5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+    <section className="py-5" style={{ borderTop: "1px solid var(--border)" }}>
       <Container>
         <div className="text-center mb-5">
-          <h2 className="display-6 fw-bold mb-3">
-            <span
-              style={{
-                background: "var(--brand-gradient)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              Transparent
-            </span>{" "}
-            Pricing — Always Cheapest
+          <h2 className="fw-bold mb-3" style={{ fontSize: "2rem" }}>
+            Transparent Pricing
           </h2>
-          <p style={{ color: "rgba(255,255,255,0.5)", maxWidth: "600px", margin: "0 auto" }}>
-            We charge exactly <strong>provider price + 15%</strong> across every model.
+          <p style={{ color: "var(--text-secondary)", maxWidth: "600px", margin: "0 auto" }}>
+            Provider price + 15% across every model.
             If you find a cheaper aggregator, we&apos;ll match it.
           </p>
         </div>
@@ -87,11 +78,13 @@ export default function PricingSection() {
                 {tier.popular && (
                   <div className="text-center mb-2">
                     <span
-                      className="badge rounded-pill px-3 py-1"
+                      className="px-2 py-1"
                       style={{
-                        background: "var(--brand-gradient)",
-                        color: "#fff",
+                        background: "var(--brand-subtle)",
+                        color: "var(--brand)",
                         fontSize: "0.75rem",
+                        borderRadius: "4px",
+                        fontWeight: 500,
                       }}
                     >
                       Most Popular
@@ -105,18 +98,28 @@ export default function PricingSection() {
                     {tier.period}
                   </span>
                 </div>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.95rem" }}>{tier.desc}</p>
+                <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>{tier.desc}</p>
                 <ul className="list-unstyled mb-4 flex-grow-1">
                   {tier.features.map((f, j) => (
-                    <li key={j} className="mb-2" style={{ fontSize: "0.95rem" }}>
-                      <span style={{ color: "#22c55e", marginRight: "8px" }}>✓</span>
+                    <li key={j} className="mb-2" style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+                      <span style={{ color: "var(--brand)", marginRight: "8px" }}>—</span>
                       {f}
                     </li>
                   ))}
                 </ul>
                 <Link
                   href={tier.href}
-                  className={`btn w-100 py-2 ${tier.popular ? "btn-primary" : "btn-outline-light"}`}
+                  style={{
+                    background: tier.popular ? "var(--brand)" : "var(--bg-elevated)",
+                    color: tier.popular ? "#fff" : "var(--text-primary)",
+                    border: tier.popular ? "none" : "1px solid var(--border)",
+                    borderRadius: "6px",
+                    padding: "8px 0",
+                    fontWeight: 500,
+                    textDecoration: "none",
+                    textAlign: "center",
+                    display: "block",
+                  }}
                 >
                   {tier.cta}
                 </Link>
@@ -125,10 +128,9 @@ export default function PricingSection() {
           ))}
         </Row>
 
-        {/* Model pricing table */}
         <div className="text-center mb-4">
-          <h3 className="fw-bold">Per-Model Rates</h3>
-          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.9rem" }}>
+          <h3 className="fw-bold" style={{ fontSize: "1.5rem" }}>Per-Model Rates</h3>
+          <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
             All prices per 1 million tokens. Provider cost + 15%.
           </p>
         </div>
@@ -164,26 +166,14 @@ export default function PricingSection() {
                   </span>
                 </td>
                 <td>{(m.contextWindow / 1000).toFixed(0)}k</td>
-                <td>
-                  {m.features.map((f) => (
-                    <span
-                      key={f}
-                      className="badge rounded-pill me-1"
-                      style={{
-                        background: "rgba(255,255,255,0.05)",
-                        color: "rgba(255,255,255,0.5)",
-                        fontSize: "0.7rem",
-                      }}
-                    >
-                      {f}
-                    </span>
-                  ))}
+                <td style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                  {m.features.join(", ")}
                 </td>
               </tr>
             ))}
           </tbody>
         </Table>
-        <div className="text-center mt-3" style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.8rem" }}>
+        <div className="text-center mt-3" style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
           Prices may fluctuate with provider changes. We always pass savings on to you.
         </div>
       </Container>

@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { MODELS } from "@/lib/pricing";
 
-const QUICK_MODELS = ["deepseek-v4-pro", "deepseek-v4-flash", "deepseek-reasoner", "deepseek-chat", "claude-sonnet-4-6", "claude-opus-4-8"];
-const GUEST_MODELS = ["deepseek-chat", "deepseek-reasoner"];
+const QUICK_MODELS = ["claude-opus-4-6", "claude-sonnet-4-6", "deepseek-v4-pro", "deepseek-v4-flash", "deepseek-reasoner", "deepseek-chat"];
+const GUEST_MODELS = ["claude-sonnet-4-6", "deepseek-chat"];
 
 interface Props {
   onSend: (models: string[], content: string, webSearch: boolean, deepResearch: boolean, pipeModel?: string) => Promise<void>;
@@ -12,21 +12,22 @@ interface Props {
   credits: number | null;
   guestMode?: boolean;
   guestMsgCount?: number;
+  onCancel?: () => void;
 }
 
-export default function ChatInput({ onSend, loading, credits, guestMode, guestMsgCount }: Props) {
+export default function ChatInput({ onSend, loading, credits, guestMode, guestMsgCount, onCancel }: Props) {
   const visibleModels = guestMode
     ? MODELS.filter((m) => m.provider === "deepseek")
     : MODELS;
-  const [selected, setSelected] = useState<string[]>(["deepseek-chat"]);
+  const [selected, setSelected] = useState<string[]>(["claude-sonnet-4-6"]);
   const MAX_GUEST = 5;
   const guestBlocked = guestMode && (guestMsgCount ?? 0) >= MAX_GUEST;
   const [pipeModel, setPipeModel] = useState<string | null>(null);
   const [showPipe, setShowPipe] = useState(false);
-  const [webSearch, setWebSearch] = useState(true);
+  const [webSearch, setWebSearch] = useState(false);
   const [deepResearch, setDeepResearch] = useState(false);
   const [input, setInput] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const isOutOfCredits = credits != null && credits <= 0;
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
   function toggleModel(id: string) {
     setSelected((prev) => {
       if (prev.includes(id)) {
-        if (prev.length === 1) return prev; // keep at least 1
+        if (prev.length === 1) return prev;
         return prev.filter((m) => m !== id);
       }
       return [...prev, id];
@@ -49,7 +50,7 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
       setShowPipe(false);
     } else {
       setShowPipe(true);
-      setPipeModel(pipeModel || "deepseek-reasoner");
+      setPipeModel(pipeModel || "claude-opus-4-6");
     }
   }
 
@@ -71,24 +72,23 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
   const mode = showPipe ? "pipe" : isCompare ? "compare" : "single";
 
   return (
-    <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+    <div style={{ borderTop: "1px solid var(--border)" }}>
       {/* Guest limit warning */}
       {guestBlocked && (
         <div
           className="px-3 py-2 text-center"
           style={{
-            background: "rgba(139, 92, 246, 0.1)",
-            borderBottom: "1px solid rgba(139, 92, 246, 0.2)",
-            color: "var(--brand-purple)",
+            background: "var(--bg-card)",
+            borderBottom: "1px solid var(--border)",
+            color: "var(--text-secondary)",
             fontSize: "0.85rem",
-            fontFamily: "'JetBrains Mono', monospace",
           }}
         >
           You&apos;ve used {MAX_GUEST}/{MAX_GUEST} free messages.{" "}
-          <a href="/signup" style={{ color: "var(--brand-purple)", fontWeight: 700 }}>
-            Create a free account →
+          <a href="/signup" style={{ color: "var(--brand)", fontWeight: 600 }}>
+            Create a free account
           </a>{" "}
-          for unlimited access to all models.
+          for 50,000 free tokens every day.
         </div>
       )}
 
@@ -97,194 +97,176 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
         <div
           className="px-3 py-1 text-center"
           style={{
-            background: "rgba(239, 68, 68, 0.1)",
-            borderBottom: "1px solid rgba(239, 68, 68, 0.2)",
-            color: "#fca5a5",
-            fontSize: "0.8rem",
-            fontFamily: "'JetBrains Mono', monospace",
+            background: "var(--bg-card)",
+            borderBottom: "1px solid var(--border-subtle)",
+            color: "var(--text-secondary)",
+            fontSize: "0.82rem",
           }}
         >
-          !insufficient credits — <a href="/dashboard/billing" style={{ color: "#fca5a5" }}>/billing</a>
+          Out of credits — <a href="/dashboard/billing" style={{ color: "var(--brand)" }}>add credits</a> or wait for tomorrow&apos;s free tokens.
         </div>
       )}
 
-      {/* Model toggles — terminal style */}
-      <div
-        className="d-flex align-items-center gap-2 px-3 pt-2 flex-wrap"
-        style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem" }}
-      >
+      {/* Model toggles */}
+      <div className="d-flex align-items-center gap-1 px-3 pt-2 flex-wrap" style={{ fontSize: "0.78rem" }}>
         {(guestMode ? GUEST_MODELS : QUICK_MODELS).map((id) => {
           const m = MODELS.find((x) => x.id === id);
           if (!m) return null;
           const isSel = selected.includes(id);
-          const ctxLabel = m.contextWindow >= 1_000_000
-            ? `${(m.contextWindow / 1_000_000).toFixed(0)}M`
-            : `${(m.contextWindow / 1000).toFixed(0)}k`;
           return (
             <button
               key={id}
               onClick={() => !m.comingSoon && toggleModel(id)}
               disabled={loading || m.comingSoon}
-              title={`${m.name} · ${ctxLabel} ctx · ${m.bedrock ? "AWS credits ✓" : ""}${m.comingSoon ? " · coming soon" : ""}`}
+              title={`${m.name} · ${m.contextWindow >= 1_000_000 ? `${(m.contextWindow / 1_000_000).toFixed(0)}M` : `${(m.contextWindow / 1000).toFixed(0)}k`} ctx`}
               style={{
-                background: isSel ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.03)",
-                border: isSel ? "1px solid rgba(34,197,94,0.3)" : "1px solid rgba(255,255,255,0.08)",
-                color: m.comingSoon ? "rgba(255,255,255,0.15)" : isSel ? "#22c55e" : "rgba(255,255,255,0.4)",
+                background: isSel ? "var(--brand-subtle)" : "transparent",
+                border: isSel ? "1px solid var(--brand)" : "1px solid var(--border)",
+                color: m.comingSoon ? "var(--text-muted)" : isSel ? "var(--brand)" : "var(--text-secondary)",
                 padding: "2px 8px",
-                borderRadius: "3px",
+                borderRadius: "4px",
                 cursor: m.comingSoon ? "default" : "pointer",
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: "0.7rem",
-                transition: "all 0.15s",
-                opacity: m.comingSoon ? 0.5 : 1,
+                fontSize: "0.75rem",
+                transition: "all 0.1s",
+                opacity: m.comingSoon ? 0.4 : 1,
               }}
             >
-              {m.comingSoon ? "○" : isSel ? "☑" : "☐"} {m.name}
-              {m.bedrock ? <span style={{ color: "rgba(255,165,0,0.6)", fontSize: "0.6rem", marginLeft: "2px" }}>⚡</span> : null}
-              {m.comingSoon ? <span style={{ fontSize: "0.6rem", marginLeft: "4px" }}>soon</span> : null}
+              {m.name}
+              {m.comingSoon ? " (soon)" : ""}
             </button>
           );
         })}
 
-        {/* Web search toggle */}
+        {/* Web search */}
         <button
           onClick={() => { setWebSearch(!webSearch); if (!webSearch) setDeepResearch(false); }}
           disabled={loading}
-          title="Search the web and feed results to the model"
           style={{
-            background: webSearch ? "rgba(6,182,212,0.15)" : "rgba(255,255,255,0.03)",
-            border: webSearch ? "1px solid rgba(6,182,212,0.3)" : "1px solid rgba(255,255,255,0.08)",
-            color: webSearch ? "var(--brand-cyan)" : "rgba(255,255,255,0.3)",
+            background: webSearch ? "var(--bg-elevated)" : "transparent",
+            border: webSearch ? "1px solid var(--text-secondary)" : "1px solid var(--border)",
+            color: webSearch ? "var(--text-primary)" : "var(--text-muted)",
             padding: "2px 8px",
-            borderRadius: "3px",
+            borderRadius: "4px",
             cursor: "pointer",
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "0.7rem",
+            fontSize: "0.75rem",
           }}
         >
-          {webSearch ? "🌐 ✓" : "🌐"}
+          Web
         </button>
 
-        {/* Deep research toggle — only available when web is on */}
+        {/* Deep research */}
         {webSearch && (
           <button
             onClick={() => setDeepResearch(!deepResearch)}
             disabled={loading}
-            title="Deep research: auto-verify claims, fact-check outputs, iteratively search"
             style={{
-              background: deepResearch ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.03)",
-              border: deepResearch ? "1px solid rgba(139,92,246,0.4)" : "1px solid rgba(255,255,255,0.08)",
-              color: deepResearch ? "var(--brand-purple)" : "rgba(255,255,255,0.3)",
+              background: deepResearch ? "var(--brand-subtle)" : "transparent",
+              border: deepResearch ? "1px solid var(--brand)" : "1px solid var(--border)",
+              color: deepResearch ? "var(--brand)" : "var(--text-muted)",
               padding: "2px 8px",
-              borderRadius: "3px",
+              borderRadius: "4px",
               cursor: "pointer",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.7rem",
+              fontSize: "0.75rem",
             }}
           >
-            {deepResearch ? "🔬 ✓" : "🔬"}
+            Research
           </button>
         )}
 
-        {/* Pipe button */}
+        {/* Refine: one model generates, another improves */}
         <button
           onClick={togglePipe}
           disabled={loading}
-          title="Pipe: send output to another model for review"
           style={{
-            background: showPipe ? "rgba(139,92,246,0.15)" : "rgba(255,255,255,0.03)",
-            border: showPipe ? "1px solid rgba(139,92,246,0.3)" : "1px solid rgba(255,255,255,0.08)",
-            color: showPipe ? "var(--brand-purple)" : "rgba(255,255,255,0.3)",
+            background: showPipe ? "var(--brand-subtle)" : "transparent",
+            border: showPipe ? "1px solid var(--brand)" : "1px solid var(--border)",
+            color: showPipe ? "var(--brand)" : "var(--text-muted)",
             padding: "2px 8px",
-            borderRadius: "3px",
+            borderRadius: "4px",
             cursor: "pointer",
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "0.7rem",
+            fontSize: "0.75rem",
           }}
         >
-          {showPipe ? "|> ✓" : "|>"}
+          Refine
         </button>
 
-        {/* Pipe target selector */}
         {showPipe && (
           <select
             className="form-select"
             style={{
               width: "auto",
-              background: "rgba(0,0,0,0.4)",
-              color: "var(--brand-purple)",
-              border: "1px solid rgba(139,92,246,0.3)",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.7rem",
+              fontSize: "0.75rem",
               padding: "2px 6px",
             }}
             value={pipeModel || ""}
             onChange={(e) => setPipeModel(e.target.value || null)}
           >
-            {visibleModels.filter((m) => !selected.includes(m.id)).map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
+            {visibleModels.filter((m) => m.provider === "anthropic" && !selected.includes(m.id)).map((m) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
             ))}
           </select>
         )}
 
-        {/* Mode indicator */}
-        <span style={{ color: "rgba(255,255,255,0.2)", marginLeft: "auto", flexShrink: 0 }}>
-          {mode === "compare" ? `// ${selected.length}-way compare` : mode === "pipe" ? "// pipeline" : ""}
-        </span>
+        {/* Mode label */}
+        {mode !== "single" && (
+          <span style={{ color: "var(--text-muted)", fontSize: "0.72rem", marginLeft: "auto" }}>
+            {mode === "compare" ? `${selected.length}-way compare` : "refine"}
+          </span>
+        )}
       </div>
 
       {/* Input row */}
       <div className="d-flex align-items-center p-3" style={{ gap: "8px" }}>
-        <div
-          className="d-flex align-items-center flex-grow-1"
+        <textarea
+          ref={inputRef}
+          className="form-control flex-grow-1"
           style={{
-            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-            fontSize: "0.9rem",
-            background: "rgba(0,0,0,0.3)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: "4px",
-            padding: "6px 10px",
+            resize: "none",
+            fontSize: "0.95rem",
+            minHeight: "40px",
+            maxHeight: "120px",
           }}
-        >
-          <span style={{ color: "#22c55e", marginRight: "6px", flexShrink: 0 }}>
-            {showPipe ? "|" : "$"}
-          </span>
-          <input
-            ref={inputRef}
-            type="text"
-            className="border-0 bg-transparent text-light flex-grow-1"
-            style={{
-              fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-              outline: "none",
-              fontSize: "0.9rem",
-            }}
-            placeholder={
-              guestBlocked ? "limit reached — sign up to continue..." :
-              isOutOfCredits ? "add credits..." :
-              loading ? "waiting..." :
-              showPipe ? "pipe to review..." :
-              isCompare ? "compare prompt..." :
-              "type a message..."
-            }
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={loading || isOutOfCredits}
-            autoFocus
-          />
-        </div>
+          rows={1}
+          placeholder={
+            guestBlocked ? "Limit reached — sign up to continue..." :
+            isOutOfCredits ? "Out of credits — add more to continue..." :
+            loading ? "Waiting..." :
+            "Type a message..."
+          }
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={loading || isOutOfCredits}
+          autoFocus
+        />
 
-        {/* Credits */}
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "0.75rem",
-            color: isOutOfCredits ? "#ef4444" : "rgba(255,255,255,0.3)",
-            flexShrink: 0,
-          }}
-        >
+        {/* Stop button */}
+        {loading && onCancel && (
+          <button
+            onClick={onCancel}
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--border)",
+              color: "var(--text-secondary)",
+              borderRadius: "6px",
+              padding: "6px 12px",
+              fontSize: "0.82rem",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            Stop
+          </button>
+        )}
+
+        {/* Credits display */}
+        <span style={{
+          fontSize: "0.78rem",
+          color: isOutOfCredits ? "var(--text-muted)" : "var(--text-secondary)",
+          flexShrink: 0,
+          minWidth: guestMode ? "auto" : "70px",
+          textAlign: "right",
+        }}>
           {guestMode ? `${guestMsgCount ?? 0}/${MAX_GUEST}` : credits != null ? `$${credits.toFixed(4)}` : "—"}
         </span>
       </div>

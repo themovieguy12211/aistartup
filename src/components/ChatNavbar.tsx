@@ -25,7 +25,7 @@ export default function ChatNavbar({ credits }: Props) {
     >
       <Container fluid>
         <BsNavbar.Brand as={Link} href="/" onClick={closeNav}>
-          <span className="navbar-brand">◆ DagrAI</span>
+          DagrAI
         </BsNavbar.Brand>
 
         <BsNavbar.Toggle aria-controls="chat-nav" />
@@ -57,10 +57,9 @@ export default function ChatNavbar({ credits }: Props) {
                       width: "8px",
                       height: "8px",
                       background: isLow ? "#ef4444" : "#22c55e",
-                      boxShadow: isLow ? "0 0 6px #ef4444" : "0 0 6px #22c55e",
                     }}
                   />
-                  <span className="fw-bold" style={{ color: isLow ? "#ef4444" : "#22c55e", fontSize: "0.85rem" }}>
+                  <span style={{ color: isLow ? "#ef4444" : "#22c55e", fontSize: "0.85rem", fontWeight: 500 }}>
                     {credits != null ? `$${credits.toFixed(4)}` : "—"}
                   </span>
                 </Link>
@@ -68,31 +67,40 @@ export default function ChatNavbar({ credits }: Props) {
                 {/* User menu */}
                 <div className="dropdown">
                   <button
-                    className="btn btn-sm btn-outline-light dropdown-toggle"
+                    className="dropdown-toggle"
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
+                    style={{
+                      background: "var(--bg-elevated)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text-primary)",
+                      borderRadius: "6px",
+                      padding: "4px 12px",
+                      fontSize: "0.85rem",
+                      cursor: "pointer",
+                    }}
                   >
                     {session?.user?.name || session?.user?.email?.split("@")[0]}
                   </button>
-                  <ul className="dropdown-menu dropdown-menu-end" style={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    <li><Link href="/dashboard" className="dropdown-item" style={{ color: "#e4e4e7" }} onClick={closeNav}>📊 Dashboard</Link></li>
-                    <li><Link href="/dashboard/keys" className="dropdown-item" style={{ color: "#e4e4e7" }} onClick={closeNav}>🔑 API Keys</Link></li>
-                    <li><Link href="/dashboard/billing" className="dropdown-item" style={{ color: "#e4e4e7" }} onClick={closeNav}>💳 Billing</Link></li>
+                  <ul className="dropdown-menu dropdown-menu-end" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+                    <li><Link href="/dashboard" className="dropdown-item" style={{ color: "var(--text-primary)" }} onClick={closeNav}>Dashboard</Link></li>
+                    <li><Link href="/dashboard/keys" className="dropdown-item" style={{ color: "var(--text-primary)" }} onClick={closeNav}>API Keys</Link></li>
+                    <li><Link href="/dashboard/billing" className="dropdown-item" style={{ color: "var(--text-primary)" }} onClick={closeNav}>Billing</Link></li>
                     {(session?.user as { role?: string } | undefined)?.role === "admin" && (
                       <>
-                        <li><hr className="dropdown-divider" style={{ borderColor: "rgba(255,255,255,0.1)" }} /></li>
-                        <li><Link href="/admin" className="dropdown-item" style={{ color: "#ef4444" }} onClick={closeNav}>⚡ Admin Panel</Link></li>
+                        <li><hr className="dropdown-divider" style={{ borderColor: "var(--border)" }} /></li>
+                        <li><Link href="/admin" className="dropdown-item" style={{ color: "var(--text-primary)" }} onClick={closeNav}>Admin</Link></li>
                       </>
                     )}
-                    <li><hr className="dropdown-divider" style={{ borderColor: "rgba(255,255,255,0.1)" }} /></li>
-                    <li><button className="dropdown-item" style={{ color: "#ef4444" }} onClick={async () => { closeNav(); await signOut(); window.location.href = "/"; }}>Sign Out</button></li>
+                    <li><hr className="dropdown-divider" style={{ borderColor: "var(--border)" }} /></li>
+                    <li><button className="dropdown-item" style={{ color: "var(--text-muted)" }} onClick={async () => { closeNav(); await signOut(); window.location.href = "/"; }}>Sign Out</button></li>
                   </ul>
                 </div>
               </>
             ) : (
               <>
                 <Nav.Link as={Link} href="/login" onClick={closeNav}>Sign In</Nav.Link>
-                <Link href="/signup" className="btn btn-primary btn-sm px-3 py-1" onClick={closeNav}>Sign Up →</Link>
+                <Link href="/signup" onClick={closeNav} style={{ background: "var(--brand)", color: "#fff", borderRadius: "6px", padding: "5px 14px", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>Sign Up</Link>
               </>
             )}
           </Nav>

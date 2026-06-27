@@ -5,6 +5,7 @@ import ChatMessage from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import Link from "next/link";
 import { Button } from "react-bootstrap";
+import { shouldSearchWeb } from "@/lib/query-classifier";
 
 interface Message {
   id: string;
@@ -50,9 +51,9 @@ export default function GuestChat() {
     if (msgCount >= MAX_GUEST_MSGS) return; // hard cutoff
     const model = models[0];
 
-    // Deep research if web search enabled
+    // Deep research if web search enabled — but skip for casual queries
     let searchContext = "";
-    if (webSearch) {
+    if (webSearch && shouldSearchWeb(content)) {
       try {
         const res = await fetch(`/api/research?q=${encodeURIComponent(content)}`);
         if (res.ok) {
@@ -82,7 +83,6 @@ export default function GuestChat() {
         }
       } catch {}
     }
-    const promptWithSearch = searchContext ? content + searchContext : content;
     const userMsg: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -117,6 +117,9 @@ export default function GuestChat() {
       });
 
       if (!res.ok) {
+        if (res.status === 429) {
+          throw new Error("Guest limit reached. Create a free account to continue.");
+        }
         throw new Error("API error");
       }
 
@@ -183,71 +186,35 @@ export default function GuestChat() {
 
   return (
     <div className="d-flex flex-column" style={{ height: "calc(100vh - 56px)" }}>
-      {/* Banner for guest mode */}
+      {/* Guest banner */}
       <div
         className="text-center py-2 px-3"
         style={{
-          background: "rgba(139, 92, 246, 0.06)",
-          borderBottom: "1px solid rgba(139, 92, 246, 0.12)",
+          background: "var(--bg-card)",
+          borderBottom: "1px solid var(--border)",
           fontSize: "0.85rem",
-          fontFamily: "'JetBrains Mono', monospace",
-          color: "rgba(255,255,255,0.5)",
+          color: "var(--text-secondary)",
         }}
       >
-        <span style={{ color: "rgba(255,255,255,0.3)" }}>guest@dagrai:~$</span>{" "}
         You&apos;re trying DagrAI — messages aren&apos;t saved.{" "}
-        <Link href="/signup" style={{ color: "var(--brand-purple)" }}>
-          Create a free account →
+        <Link href="/signup" style={{ color: "var(--brand)" }}>
+          Create a free account
         </Link>
       </div>
 
-      {/* Terminal title bar */}
-      <div
-        className="d-flex align-items-center px-3 py-2"
-        style={{
-          background: "rgba(255,255,255,0.03)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          flexShrink: 0,
-        }}
-      >
-        <span
-          className="d-inline-block rounded-circle me-2"
-          style={{ width: "10px", height: "10px", background: "#ef4444" }}
-        />
-        <span
-          className="d-inline-block rounded-circle me-2"
-          style={{ width: "10px", height: "10px", background: "#eab308" }}
-        />
-        <span
-          className="d-inline-block rounded-circle me-3"
-          style={{ width: "10px", height: "10px", background: "#22c55e" }}
-        />
-        <span
-          style={{
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: "0.75rem",
-            color: "rgba(255,255,255,0.25)",
-          }}
-        >
-          guest@dagrai — bash — 80×24
-        </span>
-      </div>
-
       {/* Messages */}
-      <div className="flex-grow-1 overflow-auto p-4" style={{ minHeight: 0, background: "#0a0a0f" }}>
+      <div className="flex-grow-1 overflow-auto p-4" style={{ minHeight: 0 }}>
         {messages.length === 0 && (
           <div
             className="d-flex align-items-center justify-content-center h-100"
-            style={{ color: "rgba(255,255,255,0.2)" }}
+            style={{ color: "var(--text-muted)" }}
           >
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.85rem", textAlign: "center" }}>
-              <div style={{ fontSize: "1.5rem", color: "rgba(255,255,255,0.12)" }}>◆</div>
-              <div style={{ color: "rgba(255,255,255,0.18)" }}>DagrAI Terminal</div>
-              <div style={{ color: "rgba(255,255,255,0.1)", marginTop: "4px" }}>
-                Every model. One terminal. Lowest price.
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "1.25rem", fontWeight: 500, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                DagrAI
               </div>
-              <div style={{ color: "rgba(255,255,255,0.2)", marginTop: "12px" }}>
-                $ <span style={{ color: "#22c55e" }}>▋</span>
+              <div style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>
+                Every model. One API. Lowest price.
               </div>
             </div>
           </div>
@@ -257,26 +224,25 @@ export default function GuestChat() {
           <ChatMessage key={msg.id} role={msg.role} content={msg.content} model={msg.model} />
         ))}
 
-        {/* Signup prompt after a few messages */}
         {showSignup && (
           <div
             className="text-center p-4 my-3 rounded"
             style={{
-              background: "rgba(139, 92, 246, 0.08)",
-              border: "1px solid rgba(139, 92, 246, 0.2)",
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
             }}
           >
-            <div className="fw-bold mb-2" style={{ color: "var(--brand-purple)" }}>
-              ✨ Like what you see?
+            <div className="fw-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+              Like what you see?
             </div>
-            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.9rem", marginBottom: "12px" }}>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "12px" }}>
               Create a free account to save conversations, get your own API key, and access all models.
             </p>
-            <Link href="/signup" className="btn btn-primary">
-              Create Free Account →
+            <Link href="/signup" style={{ background: "var(--brand)", color: "#fff", borderRadius: "6px", padding: "8px 20px", fontWeight: 500, textDecoration: "none", display: "inline-block" }}>
+              Create Free Account
             </Link>
-            <div style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.75rem", marginTop: "6px" }}>
-              $1.00 free credits included — no card required
+            <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginTop: "8px" }}>
+              50,000 free tokens every day — no card required
             </div>
           </div>
         )}

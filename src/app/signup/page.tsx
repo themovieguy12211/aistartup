@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Container, Form, Button, Alert, Spinner } from "react-bootstrap";
+import { Container, Form, Alert, Spinner } from "react-bootstrap";
 import Navbar from "@/components/Navbar";
 import { createClient } from "@/lib/supabase";
 
@@ -34,7 +34,7 @@ export default function SignupPage() {
     if (signUpError) {
       setError(signUpError.message);
     } else {
-      // The trigger in Supabase auto-creates the profile with $1.00 credits
+      // The trigger in Supabase auto-creates the profile with daily free tokens enabled
       router.push("/");
       router.refresh();
     }
@@ -45,9 +45,9 @@ export default function SignupPage() {
       <Navbar />
       <Container className="py-5" style={{ maxWidth: "440px" }}>
         <div className="text-center mb-4">
-          <h2 className="fw-bold">Create Your Account</h2>
-          <p style={{ color: "rgba(255,255,255,0.5)" }}>
-            $1.00 free credits — no card required.
+          <h2 className="fw-semibold">Create your account</h2>
+          <p style={{ color: "var(--text-secondary)" }}>
+            50,000 free tokens every day — no card required.
           </p>
         </div>
 
@@ -65,7 +65,6 @@ export default function SignupPage() {
               placeholder="Jane Smith"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-dark border-secondary text-light"
             />
           </Form.Group>
 
@@ -77,7 +76,6 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-dark border-secondary text-light"
             />
           </Form.Group>
 
@@ -90,17 +88,16 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              className="bg-dark border-secondary text-light"
             />
           </Form.Group>
 
-          <Button type="submit" className="btn-primary w-100 py-2" disabled={loading}>
-            {loading ? <><Spinner size="sm" className="me-2" />Creating account...</> : "Create Free Account →"}
-          </Button>
+          <button type="submit" style={{ background: "var(--brand)", color: "#fff", border: "none", borderRadius: "6px", padding: "10px 0", fontWeight: 500, fontSize: "0.95rem", cursor: loading ? "default" : "pointer", width: "100%", opacity: loading ? 0.7 : 1 }} disabled={loading}>
+            {loading ? <><Spinner size="sm" className="me-2" />Creating account...</> : "Create Free Account"}
+          </button>
 
-          <div className="text-center mt-3" style={{ color: "rgba(255,255,255,0.4)" }}>
+          <div className="text-center mt-3" style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
             Already have an account?{" "}
-            <Link href="/login" style={{ color: "var(--brand-purple)" }}>Sign in</Link>
+            <Link href="/login" style={{ color: "var(--brand)" }}>Sign in</Link>
           </div>
         </Form>
       </Container>

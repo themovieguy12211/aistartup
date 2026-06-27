@@ -20,7 +20,7 @@ export default function Navbar() {
     >
       <Container>
         <BsNavbar.Brand as={Link} href="/" onClick={closeNav}>
-          <span className="navbar-brand">◆ DagrAI</span>
+          DagrAI
         </BsNavbar.Brand>
         <BsNavbar.Toggle aria-controls="main-nav" />
         <BsNavbar.Collapse id="main-nav">
@@ -53,10 +53,18 @@ export default function Navbar() {
             </Nav.Link>
             <Link
               href="/signup"
-              className="btn btn-primary btn-sm px-3 py-2"
               onClick={closeNav}
+              style={{
+                background: "var(--brand)",
+                color: "#fff",
+                borderRadius: "6px",
+                padding: "6px 16px",
+                fontSize: "0.85rem",
+                fontWeight: 500,
+                textDecoration: "none",
+              }}
             >
-              Get Started Free →
+              Get Started
             </Link>
           </Nav>
         </BsNavbar.Collapse>

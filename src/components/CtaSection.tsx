@@ -1,34 +1,28 @@
 import Link from "next/link";
-import { Container, Row, Col } from "react-bootstrap";
+import { Container } from "react-bootstrap";
 
 export default function CtaSection() {
   return (
-    <section className="py-5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+    <section className="py-5" style={{ borderTop: "1px solid var(--border)" }}>
       <Container>
         <div
-          className="text-center p-5 rounded-4"
+          className="text-center p-5 rounded"
           style={{
-            background: "linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(6, 182, 212, 0.06))",
-            border: "1px solid rgba(139, 92, 246, 0.15)",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
           }}
         >
-          <h2 className="display-6 fw-bold mb-3">Ready to Ship AI Faster?</h2>
-          <p className="lead mb-4" style={{ color: "rgba(255,255,255,0.6)", maxWidth: "500px", margin: "0 auto 24px" }}>
+          <h2 className="fw-bold mb-3" style={{ fontSize: "1.75rem" }}>Ready to Ship AI Faster?</h2>
+          <p className="mb-4" style={{ color: "var(--text-secondary)", maxWidth: "480px", margin: "0 auto 24px" }}>
             Sign up in 30 seconds. Get your API key. Start building with every model — at the lowest price.
           </p>
           <div className="d-flex gap-3 justify-content-center flex-wrap">
-            <Link href="/signup" className="btn btn-primary btn-lg px-4 py-3">
-              Create Free Account →
+            <Link href="/signup" style={{ background: "var(--brand)", color: "#fff", borderRadius: "6px", padding: "8px 20px", fontWeight: 500, textDecoration: "none", display: "inline-block" }}>
+              Create Free Account
             </Link>
-            <Link
-              href="/docs"
-              className="btn btn-outline-light btn-lg px-4 py-3"
-            >
+            <Link href="/docs" style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--border)", borderRadius: "6px", padding: "8px 20px", fontWeight: 500, textDecoration: "none", display: "inline-block" }}>
               Read the Docs
             </Link>
-          </div>
-          <div className="mt-3" style={{ color: "rgba(255,255,255,0.3)", fontSize: "0.85rem" }}>
-            Join 2,000+ developers already building with DagrAI
           </div>
         </div>
       </Container>

@@ -28,37 +28,36 @@ export default function ConversationSidebar({
       style={{
         width: "260px",
         flexShrink: 0,
-        background: "rgba(0,0,0,0.3)",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
+        background: "var(--bg-card)",
+        borderRight: "1px solid var(--border)",
         height: "calc(100vh - 56px)",
         overflow: "hidden",
-        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
       }}
     >
       {/* New chat button */}
       <button
         onClick={onNew}
-        className="btn btn-sm w-100 mb-2 text-start"
         style={{
-          background: "rgba(34,197,94,0.1)",
-          border: "1px solid rgba(34,197,94,0.2)",
-          color: "#22c55e",
-          fontSize: "0.8rem",
-          fontFamily: "'JetBrains Mono', monospace",
+          background: "var(--bg-elevated)",
+          border: "1px solid var(--border)",
+          color: "var(--text-primary)",
+          fontSize: "0.85rem",
+          borderRadius: "6px",
+          padding: "6px 12px",
+          cursor: "pointer",
+          width: "100%",
+          marginBottom: "8px",
         }}
       >
-        $ new --chat
+        + New Chat
       </button>
 
       {/* Conversation list */}
       <div className="flex-grow-1 overflow-auto" style={{ minHeight: 0 }}>
         {conversations.length === 0 && (
           <div
-            className="text-center mt-3 px-2"
-            style={{
-              color: "rgba(255,255,255,0.15)",
-              fontSize: "0.7rem",
-            }}
+            className="text-center mt-4 px-2"
+            style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}
           >
             No conversations yet
           </div>
@@ -71,89 +70,47 @@ export default function ConversationSidebar({
             className="d-flex align-items-center p-2 rounded mb-1"
             style={{
               cursor: "pointer",
-              background:
-                activeId === conv.id
-                  ? "rgba(139, 92, 246, 0.12)"
-                  : "transparent",
-              border:
-                activeId === conv.id
-                  ? "1px solid rgba(139, 92, 246, 0.2)"
-                  : "1px solid transparent",
-              transition: "all 0.1s",
+              background: activeId === conv.id ? "var(--bg-elevated)" : "transparent",
+              border: activeId === conv.id ? "1px solid var(--border)" : "1px solid transparent",
+              transition: "background 0.1s",
             }}
           >
-            <span
-              style={{
-                color:
-                  activeId === conv.id
-                    ? "var(--brand-purple)"
-                    : "rgba(255,255,255,0.3)",
-                marginRight: "6px",
-                fontSize: "0.7rem",
-                flexShrink: 0,
-              }}
-            >
-              {activeId === conv.id ? ">" : "$"}
-            </span>
             <div className="flex-grow-1" style={{ minWidth: 0 }}>
               <div
                 style={{
-                  fontSize: "0.78rem",
+                  fontSize: "0.85rem",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
-                  color:
-                    activeId === conv.id
-                      ? "#e4e4e7"
-                      : "rgba(255,255,255,0.5)",
+                  color: activeId === conv.id ? "var(--text-primary)" : "var(--text-secondary)",
                 }}
               >
                 {conv.title}
               </div>
-              <div
-                style={{
-                  fontSize: "0.65rem",
-                  color: "rgba(255,255,255,0.2)",
-                }}
-              >
-                {conv._count?.messages ?? 0} msgs ·{" "}
-                {new Date(conv.updatedAt).toLocaleDateString()}
+              <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                {conv._count?.messages ?? 0} msgs · {new Date(conv.updatedAt).toLocaleDateString()}
               </div>
             </div>
 
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm("rm this conversation?")) onDelete(conv.id);
+                if (confirm("Delete this conversation?")) onDelete(conv.id);
               }}
               style={{
                 background: "none",
                 border: "none",
-                color: "rgba(255,255,255,0.15)",
-                fontSize: "0.7rem",
+                color: "var(--text-muted)",
+                fontSize: "0.75rem",
                 cursor: "pointer",
-                padding: "2px 4px",
-                fontFamily: "'JetBrains Mono', monospace",
+                padding: "2px 6px",
+                opacity: 0.5,
               }}
-              title="rm"
             >
-              rm
+              ×
             </button>
           </div>
         ))}
-      </div>
-
-      {/* Footer hint */}
-      <div
-        className="pt-2"
-        style={{
-          borderTop: "1px solid rgba(255,255,255,0.05)",
-          fontSize: "0.65rem",
-          color: "rgba(255,255,255,0.12)",
-          textAlign: "center",
-        }}
-      >
-        $ new --chat · rm to delete
       </div>
     </div>
   );

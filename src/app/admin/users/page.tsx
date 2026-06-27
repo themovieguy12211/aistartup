@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { Card, Table, Button, Form, Modal, Badge, Spinner } from "react-bootstrap";
+import { Card, Table, Form, Modal, Badge, Spinner } from "react-bootstrap";
 
 interface User {
   id: string;
@@ -91,8 +91,8 @@ export default function AdminUsers() {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="fw-bold mb-1">Users</h2>
-          <p style={{ color: "rgba(255,255,255,0.5)", margin: 0 }}>
+          <h2 className="fw-semibold mb-1">Users</h2>
+          <p style={{ color: "var(--text-secondary)", margin: 0 }}>
             {users.length} registered users
           </p>
         </div>
@@ -125,7 +125,7 @@ export default function AdminUsers() {
                 <td>
                   <div className="fw-semibold">{user.email}</div>
                   {user.name && (
-                    <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.4)" }}>
+                    <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
                       {user.name}
                     </div>
                   )}
@@ -153,26 +153,25 @@ export default function AdminUsers() {
                 </td>
                 <td>{user._count.apiKeys}</td>
                 <td>{user._count.usageRecords}</td>
-                <td style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
+                <td style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
                 <td>
-                  <Button
-                    variant="outline-light"
-                    size="sm"
+                  <button
                     onClick={() => {
                       setEditUser(user);
                       setCreditAmount("");
                     }}
+                    style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--border)", borderRadius: "6px", padding: "4px 10px", fontSize: "0.82rem", cursor: "pointer" }}
                   >
                     Adjust Credits
-                  </Button>
+                  </button>
                 </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center py-4" style={{ color: "rgba(255,255,255,0.3)" }}>
+                <td colSpan={7} className="text-center py-4" style={{ color: "var(--text-muted)" }}>
                   No users found.
                 </td>
               </tr>
@@ -183,13 +182,13 @@ export default function AdminUsers() {
 
       {/* Credit adjustment modal */}
       <Modal show={!!editUser} onHide={() => setEditUser(null)} contentClassName="bg-dark text-light">
-        <Modal.Header closeButton style={{ borderBottomColor: "rgba(255,255,255,0.06)" }}>
+        <Modal.Header closeButton style={{ borderBottomColor: "var(--border-subtle)" }}>
           <Modal.Title>Adjust Credits — {editUser?.email}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div className="mb-3">
-            <span style={{ color: "rgba(255,255,255,0.5)" }}>Current balance: </span>
-            <span className="fw-bold" style={{ color: "#22c55e", fontFamily: "'JetBrains Mono', monospace" }}>
+            <span style={{ color: "var(--text-secondary)" }}>Current balance: </span>
+            <span style={{ color: "#22c55e", fontWeight: 600 }}>
               ${editUser?.credits?.toFixed(4)}
             </span>
           </div>
@@ -201,21 +200,20 @@ export default function AdminUsers() {
               placeholder="e.g. 10.00 or -5.00"
               value={creditAmount}
               onChange={(e) => setCreditAmount(e.target.value)}
-              className="bg-dark text-light border-secondary"
             />
           </Form.Group>
         </Modal.Body>
-        <Modal.Footer style={{ borderTopColor: "rgba(255,255,255,0.06)" }}>
-          <Button variant="outline-light" onClick={() => setEditUser(null)}>
+        <Modal.Footer style={{ borderTopColor: "var(--border-subtle)" }}>
+          <button onClick={() => setEditUser(null)} style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--border)", borderRadius: "6px", padding: "6px 14px", fontSize: "0.85rem", cursor: "pointer" }}>
             Cancel
-          </Button>
-          <Button
-            className="btn-primary"
+          </button>
+          <button
             disabled={saving || !creditAmount}
             onClick={() => handleAdjustCredits(editUser!.id, parseFloat(creditAmount))}
+            style={{ background: "var(--brand)", color: "#fff", border: "none", borderRadius: "6px", padding: "6px 14px", fontWeight: 500, fontSize: "0.85rem", cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}
           >
             {saving ? "Saving..." : "Apply"}
-          </Button>
+          </button>
         </Modal.Footer>
       </Modal>
     </div>

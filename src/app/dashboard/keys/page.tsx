@@ -2,7 +2,7 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { Card, Button, Table, Form, Modal, Spinner, Badge } from "react-bootstrap";
+import { Card, Table, Form, Modal, Spinner, Badge } from "react-bootstrap";
 
 interface ApiKey {
   id: string;
@@ -105,9 +105,9 @@ export default function ApiKeysPage() {
             Manage your API keys. Keys are one-way hashed — they&apos;re only shown once at creation.
           </p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="btn-primary">
+        <button onClick={() => setShowCreate(true)} style={{ background: "var(--brand)", color: "#fff", border: "none", borderRadius: "6px", padding: "6px 16px", fontWeight: 500, fontSize: "0.85rem", cursor: "pointer" }}>
           + New API Key
-        </Button>
+        </button>
       </div>
 
       {/* New key display */}
@@ -116,20 +116,19 @@ export default function ApiKeysPage() {
           <Card.Body>
             <div className="d-flex justify-content-between align-items-start">
               <div>
-                <div className="fw-bold text-success mb-2">
-                  ✅ Key Created Successfully
+                <div className="fw-semibold mb-2" style={{ color: "#22c55e" }}>
+                  Key Created Successfully
                 </div>
                 <p style={{ color: "#22c55e", fontSize: "0.9rem", margin: 0 }}>
                   Copy this key now — it will not be shown again.
                 </p>
               </div>
-              <Button
-                variant="outline-danger"
-                size="sm"
+              <button
                 onClick={() => setNewKeyValue(null)}
+                style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border)", borderRadius: "6px", padding: "3px 10px", fontSize: "0.8rem", cursor: "pointer" }}
               >
                 Dismiss
-              </Button>
+              </button>
             </div>
             <div
               className="api-key-value mt-3 position-relative d-inline-block"
@@ -147,7 +146,7 @@ export default function ApiKeysPage() {
       <Card>
         {keys.length === 0 ? (
           <Card.Body className="text-center py-5">
-            <p style={{ color: "rgba(255,255,255,0.4)" }}>
+            <p style={{ color: "var(--text-muted)" }}>
               You don&apos;t have any API keys yet. Create one to get started.
             </p>
           </Card.Body>
@@ -180,7 +179,7 @@ export default function ApiKeysPage() {
                   <td style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
                     {new Date(k.createdAt).toLocaleDateString()}
                   </td>
-                  <td style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
+                  <td style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
                     {k.lastUsedAt
                       ? new Date(k.lastUsedAt).toLocaleDateString()
                       : "Never"}
@@ -188,17 +187,17 @@ export default function ApiKeysPage() {
                   <td>
                     <div className="d-flex gap-1">
                       {k.isActive ? (
-                        <Button variant="outline-warning" size="sm" onClick={() => handleToggle(k.id, false)}>
+                        <button onClick={() => handleToggle(k.id, false)} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border)", borderRadius: "6px", padding: "3px 10px", fontSize: "0.8rem", cursor: "pointer" }}>
                           Revoke
-                        </Button>
+                        </button>
                       ) : (
-                        <Button variant="outline-success" size="sm" onClick={() => handleToggle(k.id, true)}>
+                        <button onClick={() => handleToggle(k.id, true)} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border)", borderRadius: "6px", padding: "3px 10px", fontSize: "0.8rem", cursor: "pointer" }}>
                           Enable
-                        </Button>
+                        </button>
                       )}
-                      <Button variant="outline-danger" size="sm" onClick={() => handleDelete(k.id)}>
-                        🗑
-                      </Button>
+                      <button onClick={() => handleDelete(k.id)} style={{ background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border)", borderRadius: "6px", padding: "3px 8px", fontSize: "0.8rem", cursor: "pointer" }}>
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -225,13 +224,13 @@ export default function ApiKeysPage() {
             />
           </Form.Group>
         </Modal.Body>
-        <Modal.Footer style={{ borderTopColor: "rgba(255,255,255,0.06)" }}>
-          <Button variant="outline-light" onClick={() => setShowCreate(false)}>
+        <Modal.Footer style={{ borderTopColor: "var(--border-subtle)" }}>
+          <button onClick={() => setShowCreate(false)} style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--border)", borderRadius: "6px", padding: "6px 14px", fontSize: "0.85rem", cursor: "pointer" }}>
             Cancel
-          </Button>
-          <Button onClick={handleCreate} disabled={creating} className="btn-primary">
+          </button>
+          <button onClick={handleCreate} disabled={creating} style={{ background: "var(--brand)", color: "#fff", border: "none", borderRadius: "6px", padding: "6px 14px", fontWeight: 500, fontSize: "0.85rem", cursor: creating ? "default" : "pointer", opacity: creating ? 0.7 : 1 }}>
             {creating ? "Creating..." : "Create Key"}
-          </Button>
+          </button>
         </Modal.Footer>
       </Modal>
     </div>
