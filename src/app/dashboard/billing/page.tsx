@@ -174,9 +174,6 @@ function BillingContent() {
               </button>
             ))}
           </div>
-          <p style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginTop: "12px", marginBottom: 0 }}>
-            Test mode — use Stripe test card <strong>4242 4242 4242 4242</strong> with any future date and any CVC.
-          </p>
         </Card.Body>
       </Card>
     </div>
