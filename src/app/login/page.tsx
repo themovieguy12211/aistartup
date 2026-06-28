@@ -1,19 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Container, Form, Alert, Spinner } from "react-bootstrap";
 import Navbar from "@/components/Navbar";
 import { createClient } from "@/lib/supabase";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const verified = searchParams.get("verified");
+  const confirmError = searchParams.get("error");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +49,21 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {verified && (
+          <Alert variant="success" dismissible>
+            Email verified! Sign in to continue.
+          </Alert>
+        )}
+        {confirmError === "invalid_token" && (
+          <Alert variant="danger" dismissible>
+            Invalid or expired confirmation link. Please sign up again.
+          </Alert>
+        )}
+        {confirmError === "expired_token" && (
+          <Alert variant="danger" dismissible>
+            Confirmation link expired. Please sign up again.
+          </Alert>
+        )}
         {error && (
           <Alert variant="danger" dismissible onClose={() => setError("")}>
             {error}
@@ -91,5 +109,13 @@ export default function LoginPage() {
         </Form>
       </Container>
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

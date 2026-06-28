@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceSupabase } from "@/lib/supabase-server";
 import { sendConfirmation } from "@/lib/email";
+import crypto from "crypto";
 
 const signupRateMap = new Map<string, { count: number; resetAt: number }>();
 const MAX_SIGNUPS = 3;
@@ -31,23 +32,27 @@ export async function POST(req: NextRequest) {
       entry.count++;
     }
 
-    // Try to get confirmation link from Supabase
-    let confirmUrl = "https://dagrai.xyz/login";
-    try {
-      const supabase = await createServiceSupabase();
-      // generateLink with "signup" type works even for existing unconfirmed users
-      const { data: linkData } = await (supabase.auth.admin as any).generateLink({
-        type: "signup",
-        email,
-        password: "placeholder-not-used-for-existing",
-        options: { redirectTo: "https://dagrai.xyz/login" },
-      });
-      if (linkData?.properties?.action_link) {
-        confirmUrl = linkData.properties.action_link;
-      }
-    } catch {
-      // Fall back to generic login link — user may already be confirmed
-    }
+    const supabase = await createServiceSupabase();
+
+    // Find the user
+    const { data: { users } } = await supabase.auth.admin.listUsers();
+    const user = users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+    if (!user) return NextResponse.json({ sent: true }); // don't reveal
+
+    // Generate our own confirmation token
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+
+    await supabase.from("email_confirmations").insert({
+      user_id: user.id,
+      email,
+      token,
+      expires_at: expiresAt,
+    });
+
+    // Build OUR url — no supabase-kong garbage
+    const origin = req.headers.get("origin") || "https://dagrai.xyz";
+    const confirmUrl = `${origin}/api/auth/confirm?token=${token}`;
 
     await sendConfirmation(email, confirmUrl);
     return NextResponse.json({ sent: true });

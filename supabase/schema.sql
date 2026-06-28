@@ -258,3 +258,15 @@ CREATE TABLE IF NOT EXISTS public.stripe_charges (
   amount FLOAT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Email confirmation tokens (our own system — bypasses gotrue's broken URLs)
+CREATE TABLE IF NOT EXISTS public.email_confirmations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  email TEXT NOT NULL,
+  token TEXT UNIQUE NOT NULL,
+  confirmed BOOLEAN DEFAULT false,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_email_confirmation_token ON public.email_confirmations(token);
