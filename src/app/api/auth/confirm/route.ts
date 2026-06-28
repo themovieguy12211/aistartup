@@ -38,7 +38,8 @@ export async function GET(req: NextRequest) {
       .eq("id", confirmation.id);
 
     return NextResponse.redirect(`${REDIRECT_BASE}/login?verified=true`);
-  } catch {
+  } catch (e) {
+    console.error("confirm error:", e);
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || "https://dagrai.xyz"}/login?error=confirm_failed`);
   }
 }

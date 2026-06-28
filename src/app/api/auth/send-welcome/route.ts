@@ -34,29 +34,38 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createServiceSupabase();
 
-    // Find the user
-    const { data: { users } } = await supabase.auth.admin.listUsers();
-    const user = users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (!user) return NextResponse.json({ sent: true }); // don't reveal
+    // Find user — listUsers paginates, so we need to iterate pages
+    let user: { id: string; email?: string } | undefined;
+    let page = 1;
+    while (!user && page <= 5) {
+      const { data } = await supabase.auth.admin.listUsers({ page, perPage: 50 });
+      if (!data?.users?.length) break;
+      user = data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+      page++;
+    }
 
-    // Generate our own confirmation token
+    if (!user) return NextResponse.json({ sent: true }); // user not found, don't reveal
+
+    // Generate token
     const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    await supabase.from("email_confirmations").insert({
-      user_id: user.id,
-      email,
-      token,
-      expires_at: expiresAt,
+    const { error: insertError } = await supabase.from("email_confirmations").insert({
+      user_id: user.id, email, token, expires_at: expiresAt,
     });
 
-    // Build OUR url — always use the real domain, not the request origin
+    if (insertError) {
+      console.error("Failed to insert confirmation token:", insertError);
+      return NextResponse.json({ sent: false, error: insertError.message });
+    }
+
     const base = process.env.NEXT_PUBLIC_SITE_URL || "https://dagrai.xyz";
-    const confirmUrl = `${base}/api/auth/confirm?token=${token}`;
+    const confirmUrl = `${base}/confirm?token=${token}`;
 
     await sendConfirmation(email, confirmUrl);
     return NextResponse.json({ sent: true });
-  } catch {
+  } catch (e) {
+    console.error("send-welcome error:", e);
     return NextResponse.json({ sent: false });
   }
 }
