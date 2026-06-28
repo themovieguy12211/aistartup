@@ -8,6 +8,8 @@ export async function GET(req: NextRequest) {
 
     const supabase = await createServiceSupabase();
 
+    const REDIRECT_BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://dagrai.xyz";
+
     // Find and verify our token
     const { data: confirmation } = await supabase
       .from("email_confirmations")
@@ -17,11 +19,11 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (!confirmation) {
-      return NextResponse.redirect(new URL("/login?error=invalid_token", req.url));
+      return NextResponse.redirect(`${REDIRECT_BASE}/login?error=invalid_token`);
     }
 
     if (new Date(confirmation.expires_at) < new Date()) {
-      return NextResponse.redirect(new URL("/login?error=expired_token", req.url));
+      return NextResponse.redirect(`${REDIRECT_BASE}/login?error=expired_token`);
     }
 
     // Confirm the user in Supabase
@@ -35,9 +37,8 @@ export async function GET(req: NextRequest) {
       .update({ confirmed: true })
       .eq("id", confirmation.id);
 
-    // Redirect to login with success
-    return NextResponse.redirect(new URL("/login?verified=true", req.url));
+    return NextResponse.redirect(`${REDIRECT_BASE}/login?verified=true`);
   } catch {
-    return NextResponse.redirect(new URL("/login?error=confirm_failed", req.url));
+    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || "https://dagrai.xyz"}/login?error=confirm_failed`);
   }
 }

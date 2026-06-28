@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
       expires_at: expiresAt,
     });
 
-    // Build OUR url — no supabase-kong garbage
-    const origin = req.headers.get("origin") || "https://dagrai.xyz";
-    const confirmUrl = `${origin}/api/auth/confirm?token=${token}`;
+    // Build OUR url — always use the real domain, not the request origin
+    const base = process.env.NEXT_PUBLIC_SITE_URL || "https://dagrai.xyz";
+    const confirmUrl = `${base}/api/auth/confirm?token=${token}`;
 
     await sendConfirmation(email, confirmUrl);
     return NextResponse.json({ sent: true });
