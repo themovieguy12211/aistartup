@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS public.conversations (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL DEFAULT 'New Chat',
   user_id UUID REFERENCES auth.users(id) NOT NULL,
+  public_id UUID DEFAULT gen_random_uuid() UNIQUE,
+  is_public BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -116,6 +118,22 @@ CREATE TRIGGER trg_prevent_credit_self_update
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.prevent_credit_self_update();
 
+-- Prevent users from changing their own role
+CREATE OR REPLACE FUNCTION public.prevent_role_self_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.role != OLD.role AND current_setting('role') != 'service_role' THEN
+    RAISE EXCEPTION 'Role can only be changed by an admin.';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trg_prevent_role_self_update ON public.profiles;
+CREATE TRIGGER trg_prevent_role_self_update
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_role_self_update();
+
 -- API Keys: users can CRUD their own keys
 CREATE POLICY "Users can read own keys" ON public.api_keys
   FOR SELECT USING (auth.uid() = user_id);
@@ -185,3 +203,58 @@ CREATE POLICY "Users can CRUD own memories" ON public.user_memories
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS daily_tokens_used INTEGER DEFAULT 0;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS daily_tokens_date DATE DEFAULT CURRENT_DATE;
 CREATE INDEX IF NOT EXISTS idx_profiles_daily_date ON public.profiles(daily_tokens_date);
+
+-- Password reset tokens (bypasses gotrue's broken self-hosted config)
+CREATE TABLE IF NOT EXISTS public.password_reset_tokens (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  token TEXT UNIQUE NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_password_reset_token ON public.password_reset_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_password_reset_user ON public.password_reset_tokens(user_id);
+
+-- Atomic daily token increment (prevents race conditions on concurrent requests)
+CREATE OR REPLACE FUNCTION public.consume_daily_tokens(
+  p_user_id UUID,
+  p_tokens INTEGER,
+  p_today DATE
+)
+RETURNS INTEGER AS $$
+DECLARE
+  current_used INTEGER;
+  current_date DATE;
+  free_granted INTEGER;
+BEGIN
+  SELECT daily_tokens_used, daily_tokens_date INTO current_used, current_date
+  FROM public.profiles WHERE id = p_user_id FOR UPDATE;
+
+  IF NOT FOUND THEN RETURN 0; END IF;
+
+  -- Reset if new day
+  IF current_date IS NULL OR current_date != p_today THEN
+    current_used := 0;
+  END IF;
+
+  -- Grant as many free tokens as available
+  free_granted := LEAST(p_tokens, GREATEST(0, 50000 - current_used));
+
+  UPDATE public.profiles
+  SET daily_tokens_used = current_used + free_granted,
+      daily_tokens_date = p_today
+  WHERE id = p_user_id;
+
+  RETURN free_granted;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Stripe charges (idempotency tracking)
+CREATE TABLE IF NOT EXISTS public.stripe_charges (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  stripe_session_id TEXT UNIQUE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  amount FLOAT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);

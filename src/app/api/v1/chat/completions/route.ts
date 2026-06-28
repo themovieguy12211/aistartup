@@ -78,20 +78,61 @@ export async function POST(req: NextRequest) {
     if (!providerRes.ok) return Response.json({ error: `Upstream error: ${providerRes.status}` }, { status: providerRes.status });
 
     if (stream) {
-      const bodySize = JSON.stringify(body).length;
-      const estimatedInputTokens = Math.ceil(bodySize / 4);
-      const estimatedOutputTokens = 2000;
-      const totalTokens = estimatedInputTokens + estimatedOutputTokens;
-      const { chargeableTokens } = await useFreeTokens(profile.id, totalTokens);
-      const scale = totalTokens > 0 ? chargeableTokens / totalTokens : 1;
-      const cost = calculateCost(usedModel, estimatedInputTokens * scale, estimatedOutputTokens * scale);
-      const nc = +(profile.credits - cost).toFixed(8);
-      await supabase.from("profiles").update({ credits: nc < 0 ? 0 : nc }).eq("id", apiKey.user_id);
-      await supabase.from("usage_records").insert({
-        model: usedModel, provider: usedProvider || "deepseek", tokens_in: estimatedInputTokens, tokens_out: estimatedOutputTokens, cost,
-        api_key_id: apiKey.id, user_id: apiKey.user_id,
+      const reader = providerRes.body?.getReader();
+      if (!reader) throw new Error("No stream");
+
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let inputTokens = 0;
+      let outputTokens = 0;
+
+      const interceptedStream = new ReadableStream({
+        async start(controller) {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              controller.enqueue(value);
+              buffer += decoder.decode(value, { stream: true });
+
+              // Parse SSE for usage data (OpenAI format)
+              const lines = buffer.split("\n");
+              buffer = lines.pop() || "";
+              for (const line of lines) {
+                if (line.startsWith("data: ") && line !== "data: [DONE]") {
+                  try {
+                    const parsed = JSON.parse(line.slice(6));
+                    if (parsed.usage?.prompt_tokens && !inputTokens) inputTokens = parsed.usage.prompt_tokens;
+                    if (parsed.usage?.completion_tokens && !outputTokens) outputTokens = parsed.usage.completion_tokens;
+                  } catch {}
+                }
+              }
+            }
+
+            // Exact cost from actual token usage
+            const inTokens = inputTokens || Math.ceil(JSON.stringify(body).length / 4);
+            const outTokens = outputTokens || 2000;
+            const totalTokens = inTokens + outTokens;
+            const { chargeableTokens } = await useFreeTokens(profile.id, totalTokens);
+            const scale = totalTokens > 0 ? chargeableTokens / totalTokens : 1;
+            const cost = calculateCost(usedModel, inTokens * scale, outTokens * scale);
+            const nc = +(profile.credits - cost).toFixed(8);
+
+            await supabase.from("profiles").update({ credits: nc < 0 ? 0 : nc }).eq("id", apiKey.user_id);
+            await supabase.from("usage_records").insert({
+              model: usedModel, provider: usedProvider || "deepseek", tokens_in: inTokens, tokens_out: outTokens, cost,
+              api_key_id: apiKey.id, user_id: apiKey.user_id,
+            });
+
+            controller.close();
+          } catch (e) {
+            controller.error(e);
+          }
+        },
       });
-      return new Response(providerRes.body, { headers: { "Content-Type": "text/event-stream" } });
+
+      return new Response(interceptedStream, { headers: { "Content-Type": "text/event-stream" } });
     }
 
     const data = await providerRes.json();

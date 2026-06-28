@@ -238,6 +238,19 @@ export default function ChatInterface({ credits, onCreditsChange }: Props) {
     } catch {}
   }
 
+  async function handleShare(id: string) {
+    try {
+      const res = await fetch(`/api/conversations/${id}/share`, { method: "POST" });
+      const data = await res.json();
+      if (data.shareUrl) {
+        await navigator.clipboard.writeText(data.shareUrl);
+        alert("Share link copied to clipboard!");
+      } else {
+        alert("Sharing disabled. The link is now private.");
+      }
+    } catch {}
+  }
+
   // Main send — supports compare (multi-model) and pipeline
   async function handleSend(
     models: string[], content: string, webSearch: boolean, deepResearch: boolean, pipeModel?: string
@@ -626,6 +639,7 @@ TASK: Rewrite your response using ONLY these verified results. You MUST:
         onSelect={handleSelect}
         onNew={handleNew}
         onDelete={handleDelete}
+        onShare={handleShare}
       />
       <div className="flex-grow-1 d-flex flex-column" style={{ minWidth: 0 }}>
         <ChatWindow messages={messages} title={title} />

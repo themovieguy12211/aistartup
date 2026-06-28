@@ -13,6 +13,7 @@ interface Props {
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onShare?: (id: string) => void;
 }
 
 export default function ConversationSidebar({
@@ -21,6 +22,7 @@ export default function ConversationSidebar({
   onSelect,
   onNew,
   onDelete,
+  onShare,
 }: Props) {
   return (
     <div
@@ -67,7 +69,7 @@ export default function ConversationSidebar({
           <div
             key={conv.id}
             onClick={() => onSelect(conv.id)}
-            className="d-flex align-items-center p-2 rounded mb-1"
+            className="d-flex align-items-center p-2 rounded mb-1 conversation-row"
             style={{
               cursor: "pointer",
               background: activeId === conv.id ? "var(--bg-elevated)" : "transparent",
@@ -92,19 +94,36 @@ export default function ConversationSidebar({
               </div>
             </div>
 
+            {onShare && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onShare(conv.id); }}
+                className="conversation-delete-btn"
+                title="Share"
+                style={{
+                  background: "none", border: "none",
+                  color: "var(--text-muted)", fontSize: "0.8rem",
+                  cursor: "pointer", padding: "2px 6px", borderRadius: "4px",
+                }}
+              >
+                ↗
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 if (confirm("Delete this conversation?")) onDelete(conv.id);
               }}
+              className="conversation-delete-btn"
+              title="Delete"
               style={{
                 background: "none",
                 border: "none",
                 color: "var(--text-muted)",
-                fontSize: "0.75rem",
+                fontSize: "0.85rem",
                 cursor: "pointer",
-                padding: "2px 6px",
-                opacity: 0.5,
+                padding: "2px 8px",
+                borderRadius: "4px",
+                marginLeft: "4px",
               }}
             >
               ×

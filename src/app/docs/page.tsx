@@ -61,7 +61,7 @@ const integrations = [
     lang: "~/.claude/settings.json",
     code: `{
   "env": {
-    "ANTHROPIC_BASE_URL": "https://api.dagrai.xyz/api",
+    "ANTHROPIC_BASE_URL": "https://dagrai.xyz/api",
     "ANTHROPIC_AUTH_TOKEN": "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "ANTHROPIC_MODEL": "claude-sonnet-4-6",
     "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-6",
@@ -77,7 +77,7 @@ const integrations = [
     icon: "📝", title: "Cursor", badge: "OpenAI",
     desc: "Add as a custom model in Cursor settings. OpenAI-compatible endpoint.",
     lang: "Cursor Settings",
-    code: `API Base URL: https://api.dagrai.xyz/api/v1
+    code: `API Base URL: https://dagrai.xyz/api/v1
 API Key: sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 Model ID: deepseek-v4-pro`,
   },
@@ -90,7 +90,7 @@ Model ID: deepseek-v4-pro`,
     "title": "DagrAI V4 Pro",
     "provider": "openai",
     "model": "deepseek-v4-pro",
-    "apiBase": "https://api.dagrai.xyz/api/v1",
+    "apiBase": "https://dagrai.xyz/api/v1",
     "apiKey": "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
   }]
 }`,
@@ -99,7 +99,7 @@ Model ID: deepseek-v4-pro`,
     icon: "⚡", title: "Aider", badge: "OpenAI",
     desc: "AI pair programming. Switch models by changing --model flag. All models supported.",
     lang: "Terminal",
-    code: `export OPENAI_API_BASE=https://api.dagrai.xyz/api/v1
+    code: `export OPENAI_API_BASE=https://dagrai.xyz/api/v1
 export OPENAI_API_KEY=sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # Any model works — DeepSeek, Claude, Llama, Mistral
 aider --model deepseek-v4-pro       # fast + 1M context
@@ -113,7 +113,7 @@ aider --model deepseek-reasoner     # deep reasoning`,
     code: `from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://api.dagrai.xyz/api/v1",
+    base_url="https://dagrai.xyz/api/v1",
     api_key="sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 )
 
@@ -130,7 +130,7 @@ print(response.choices[0].message.content)`,
     code: `import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: "https://api.dagrai.xyz/api/v1",
+  baseURL: "https://dagrai.xyz/api/v1",
   apiKey: "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 });
 
@@ -147,7 +147,7 @@ const response = await client.chat.completions.create({
 import { generateText } from "ai";
 
 const dagrai = createOpenAI({
-  baseURL: "https://api.dagrai.xyz/api/v1",
+  baseURL: "https://dagrai.xyz/api/v1",
   apiKey: "sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 });
 
@@ -225,7 +225,7 @@ export default function DocsPage() {
               </div>
               <CodeBlock
                 lang="bash"
-                code={`curl https://api.dagrai.xyz/api/v1/chat/completions \\
+                code={`curl https://dagrai.xyz/api/v1/chat/completions \\
   -H "Authorization: Bearer sk-dagrai-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \\
   -H "Content-Type: application/json" \\
   -d '{

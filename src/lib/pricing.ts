@@ -32,6 +32,15 @@ const BASE: Record<string, { name: string; provider: string; in: number; out: nu
     features: ["chat", "thinking", "vision", "1M ctx", "best"],
     bedrock: true,
   },
+  "claude-opus-4-5": {
+    name: "Claude Opus 4.5",
+    provider: "anthropic",
+    in: 5.0,
+    out: 25.0,
+    ctx: 200000,
+    features: ["chat", "thinking", "vision"],
+    bedrock: true,
+  },
   "claude-sonnet-4-6": {
     name: "Claude Sonnet 4.6",
     provider: "anthropic",
@@ -39,6 +48,15 @@ const BASE: Record<string, { name: string; provider: string; in: number; out: nu
     out: 15.0,
     ctx: 1000000,
     features: ["chat", "thinking", "vision", "1M ctx"],
+    bedrock: true,
+  },
+  "claude-sonnet-4-5": {
+    name: "Claude Sonnet 4.5",
+    provider: "anthropic",
+    in: 3.0,
+    out: 15.0,
+    ctx: 200000,
+    features: ["chat", "thinking", "vision"],
     bedrock: true,
   },
   "claude-haiku-4-5": {
@@ -66,22 +84,6 @@ const BASE: Record<string, { name: string; provider: string; in: number; out: nu
     out: 0.28,
     ctx: 1000000,
     features: ["chat", "1M ctx", "speed", "streaming"],
-  },
-  "deepseek-reasoner": {
-    name: "DeepSeek R1",
-    provider: "deepseek",
-    in: 0.14,
-    out: 0.28,
-    ctx: 128000,
-    features: ["chat", "reasoning", "streaming"],
-  },
-  "deepseek-chat": {
-    name: "DeepSeek V3",
-    provider: "deepseek",
-    in: 0.14,
-    out: 0.28,
-    ctx: 128000,
-    features: ["chat", "streaming"],
   },
   // === Meta & Mistral ===
   "llama-4-maverick": {

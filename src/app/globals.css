@@ -254,3 +254,11 @@ body {
   color: var(--text-primary);
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
 }
+
+/* Conversation sidebar delete button — visible on row hover */
+.conversation-delete-btn {
+  visibility: hidden;
+}
+.conversation-row:hover .conversation-delete-btn {
+  visibility: visible;
+}

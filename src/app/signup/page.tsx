@@ -15,13 +15,14 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -33,10 +34,21 @@ export default function SignupPage() {
 
     if (signUpError) {
       setError(signUpError.message);
-    } else {
-      // The trigger in Supabase auto-creates the profile with daily free tokens enabled
+    } else if (data.session) {
+      // Auto-confirmed — user is logged in immediately
+      fetch("/api/auth/send-welcome", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      }).catch(() => {});
       router.push("/");
       router.refresh();
+    } else {
+      // Needs email confirmation — send verification email
+      setCheckEmail(true);
+      fetch("/api/auth/send-welcome", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      }).catch(() => {});
     }
   };
 
@@ -44,7 +56,19 @@ export default function SignupPage() {
     <>
       <Navbar />
       <Container className="py-5" style={{ maxWidth: "440px" }}>
-        <div className="text-center mb-4">
+        {checkEmail ? (
+          <div className="text-center">
+            <h2 className="fw-semibold mb-3">Check your email</h2>
+            <p style={{ color: "var(--text-secondary)", marginBottom: "8px" }}>
+              We sent a confirmation link to <strong>{email}</strong>.
+            </p>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+              Click the link to verify your account. Check spam if you don't see it.
+            </p>
+          </div>
+        ) : (
+          <>
+          <div className="text-center mb-4">
           <h2 className="fw-semibold">Create your account</h2>
           <p style={{ color: "var(--text-secondary)" }}>
             50,000 free tokens every day — no card required.
@@ -100,6 +124,8 @@ export default function SignupPage() {
             <Link href="/login" style={{ color: "var(--brand)" }}>Sign in</Link>
           </div>
         </Form>
+          </>
+        )}
       </Container>
     </>
   );

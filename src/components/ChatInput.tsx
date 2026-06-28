@@ -3,8 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import { MODELS } from "@/lib/pricing";
 
-const QUICK_MODELS = ["claude-opus-4-6", "claude-sonnet-4-6", "deepseek-v4-pro", "deepseek-v4-flash", "deepseek-reasoner", "deepseek-chat"];
-const GUEST_MODELS = ["claude-sonnet-4-6", "deepseek-chat"];
+const QUICK_MODELS = ["claude-opus-4-6", "claude-opus-4-5", "claude-sonnet-4-6", "claude-sonnet-4-5", "claude-haiku-4-5", "deepseek-v4-pro", "deepseek-v4-flash"];
+const GUEST_MODELS = ["claude-haiku-4-5", "deepseek-v4-flash"];
+// Claude is available via API (v1/chat/completions, v1/messages).
+// Chat UI routes through DeepSeek until Anthropic endpoint is added to the conversation API.
 
 interface Props {
   onSend: (models: string[], content: string, webSearch: boolean, deepResearch: boolean, pipeModel?: string) => Promise<void>;
@@ -19,7 +21,7 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
   const visibleModels = guestMode
     ? MODELS.filter((m) => m.provider === "deepseek")
     : MODELS;
-  const [selected, setSelected] = useState<string[]>(["claude-sonnet-4-6"]);
+  const [selected, setSelected] = useState<string[]>(["deepseek-v4-pro"]);
   const MAX_GUEST = 5;
   const guestBlocked = guestMode && (guestMsgCount ?? 0) >= MAX_GUEST;
   const [pipeModel, setPipeModel] = useState<string | null>(null);
@@ -27,7 +29,9 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
   const [webSearch, setWebSearch] = useState(false);
   const [deepResearch, setDeepResearch] = useState(false);
   const [input, setInput] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isOutOfCredits = credits != null && credits <= 0;
 
   useEffect(() => {
@@ -56,8 +60,32 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
 
   async function handleSend() {
     if (!input.trim() || loading || isOutOfCredits) return;
-    const content = input.trim();
+    let content = input.trim();
     setInput("");
+
+    if (files.length > 0) {
+      const parts: string[] = [];
+      for (const file of files) {
+        try {
+          const isText = file.type.startsWith("text/")
+            || file.name.match(/\.(txt|md|json|js|ts|py|html|css|xml|yaml|yml|csv|log|env|sql|sh)$/i);
+          if (isText) {
+            const text = await new Promise<string>((resolve, reject) => {
+              const r = new FileReader();
+              r.onload = () => resolve(r.result as string);
+              r.onerror = reject;
+              r.readAsText(file);
+            });
+            parts.push(`[File: ${file.name}]\n\`\`\`\n${text.slice(0, 8000)}\n\`\`\``);
+          } else {
+            parts.push(`[Attached: ${file.name} (${file.type || "binary"}) — preview not supported]`);
+          }
+        } catch {}
+      }
+      if (parts.length) content = parts.join("\n\n") + "\n\n" + content;
+      setFiles([]);
+    }
+
     await onSend(selected, content, webSearch, deepResearch, pipeModel || undefined);
   }
 
@@ -183,7 +211,6 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
             color: showPipe ? "var(--brand)" : "var(--text-muted)",
             padding: "2px 8px",
             borderRadius: "4px",
-            cursor: "pointer",
             fontSize: "0.75rem",
           }}
         >
@@ -193,11 +220,7 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
         {showPipe && (
           <select
             className="form-select"
-            style={{
-              width: "auto",
-              fontSize: "0.75rem",
-              padding: "2px 6px",
-            }}
+            style={{ width: "auto", fontSize: "0.75rem", padding: "2px 6px" }}
             value={pipeModel || ""}
             onChange={(e) => setPipeModel(e.target.value || null)}
           >
@@ -217,6 +240,30 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
 
       {/* Input row */}
       <div className="d-flex align-items-center p-3" style={{ gap: "8px" }}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          style={{ display: "none" }}
+          onChange={(e) => { if (e.target.files) setFiles(Array.from(e.target.files)); }}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={loading}
+          title="Attach files"
+          style={{
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--border)",
+            color: files.length > 0 ? "var(--brand)" : "var(--text-muted)",
+            borderRadius: "6px",
+            padding: "8px 10px",
+            fontSize: "0.85rem",
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+        >
+          {files.length > 0 ? files.length : "+"}
+        </button>
         <textarea
           ref={inputRef}
           className="form-control flex-grow-1"
@@ -239,6 +286,15 @@ export default function ChatInput({ onSend, loading, credits, guestMode, guestMs
           disabled={loading || isOutOfCredits}
           autoFocus
         />
+
+        {/* Attached files indicator */}
+        {files.length > 0 && (
+          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
+            {files.map((f, i) => (
+              <span key={i} style={{ marginRight: "8px" }}>{f.name}{i < files.length - 1 ? "," : ""}</span>
+            ))}
+          </div>
+        )}
 
         {/* Stop button */}
         {loading && onCancel && (

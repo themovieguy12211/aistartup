@@ -83,8 +83,8 @@ export default function DashboardOverview() {
             Here&apos;s what&apos;s happening with your account.
           </p>
         </div>
-        <Link href="/dashboard/playground" style={{ background: "var(--brand)", color: "#fff", borderRadius: "6px", padding: "6px 16px", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>
-          Open Playground
+        <Link href="/" style={{ background: "var(--brand)", color: "#fff", borderRadius: "6px", padding: "6px 16px", fontSize: "0.85rem", fontWeight: 500, textDecoration: "none" }}>
+          Open Chat
         </Link>
       </div>
 
@@ -174,15 +174,15 @@ export default function DashboardOverview() {
                   fontSize: "0.85rem",
                 }}
               >
-                curl https://api.dagrai.xyz/v1/chat/completions \<br />
+                curl https://dagrai.xyz/v1/chat/completions \<br />
                 &nbsp;&nbsp;-H &quot;Authorization: Bearer YOUR_API_KEY&quot; \<br />
                 &nbsp;&nbsp;-d &apos;{`{"model": "deepseek-chat", "messages": [{"role": "user", "content": "Hello!"}]}`}&apos;
               </div>
             </li>
             <li>
-              Or try it right now in the{" "}
-              <Link href="/dashboard/playground" style={{ color: "var(--brand)" }}>
-                Playground
+              Or start chatting in the{" "}
+              <Link href="/" style={{ color: "var(--brand)" }}>
+                Chat
               </Link>
               .
             </li>

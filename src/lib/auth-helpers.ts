@@ -41,33 +41,18 @@ export async function useFreeTokens(
 ): Promise<{ freeTokens: number; chargeableTokens: number }> {
   if (totalTokens <= 0) return { freeTokens: 0, chargeableTokens: 0 };
 
-  const { createServerSupabase } = await import("@/lib/supabase-server");
-  const supabase = await createServerSupabase();
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const { createServiceSupabase } = await import("@/lib/supabase-server");
+  const supabase = await createServiceSupabase();
+  const today = new Date().toISOString().slice(0, 10);
 
-  // Read current state
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("daily_tokens_used, daily_tokens_date")
-    .eq("id", userId)
-    .single();
+  // Atomic RPC — no SELECT-then-UPDATE race condition
+  const { data: freeGranted, error } = await supabase.rpc("consume_daily_tokens", {
+    p_user_id: userId,
+    p_tokens: totalTokens,
+    p_today: today,
+  });
 
-  if (!profile) return { freeTokens: 0, chargeableTokens: totalTokens };
-
-  const isNewDay = profile.daily_tokens_date !== today;
-  const usedToday = isNewDay ? 0 : (profile.daily_tokens_used || 0);
-  const remaining = Math.max(0, FREE_DAILY_TOKENS - usedToday);
-  const freeTokens = Math.min(remaining, totalTokens);
-
-  // Update atomically
-  await supabase
-    .from("profiles")
-    .update({
-      daily_tokens_used: usedToday + freeTokens,
-      daily_tokens_date: today,
-    })
-    .eq("id", userId);
-
+  const freeTokens = error ? 0 : (freeGranted || 0);
   return { freeTokens, chargeableTokens: totalTokens - freeTokens };
 }
 

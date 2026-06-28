@@ -123,7 +123,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { data: conversation } = await supabase.from("conversations").select("*").eq("id", id).eq("user_id", user.id).single();
     if (!conversation) return Response.json({ error: "Not found" }, { status: 404 });
 
-    const selectedModel = model || "claude-sonnet-4-6";
+    const selectedModel = model || "deepseek-v4-pro";
+
+    // Claude chat routing coming soon — available now via API
+    if (selectedModel.startsWith("claude-")) {
+      return Response.json(
+        { error: "Claude chat is almost ready. For now, Claude is available via the API — check /docs for the quickstart.", code: "model_unavailable" },
+        { status: 400 }
+      );
+    }
 
     // Save user message
     await supabase.from("messages").insert({

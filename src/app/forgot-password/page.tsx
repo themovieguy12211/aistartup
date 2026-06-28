@@ -4,10 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Container, Form, Spinner } from "react-bootstrap";
 import Navbar from "@/components/Navbar";
-import { createClient } from "@/lib/supabase";
 
 export default function ForgotPasswordPage() {
-  const supabase = createClient();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,17 +16,19 @@ export default function ForgotPasswordPage() {
     setError("");
     setLoading(true);
 
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-
-    setLoading(false);
-
-    if (resetError) {
-      setError(resetError.message);
-    } else {
-      setSent(true);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error || "Something went wrong");
+      else setSent(true);
+    } catch {
+      setError("Network error. Try again.");
     }
+    setLoading(false);
   };
 
   return (

@@ -1,51 +1,48 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Container, Form, Spinner } from "react-bootstrap";
 import Navbar from "@/components/Navbar";
-import { createClient } from "@/lib/supabase";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
-  const supabase = createClient();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
 
-  const [ready, setReady] = useState(false);
-
   useEffect(() => {
-    // The reset link includes a token in the URL hash.
-    // The browser client exchanges it for a session automatically.
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setReady(true);
-      } else {
-        setError("Invalid or expired reset link. Please request a new one.");
-      }
-    });
-  }, [supabase]);
+    if (!token) {
+      setError("Missing reset token. Please request a new reset link.");
+    }
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    const { error: updateError } = await supabase.auth.updateUser({
-      password,
-    });
-
-    setLoading(false);
-
-    if (updateError) {
-      setError(updateError.message);
-    } else {
-      setDone(true);
-      setTimeout(() => router.push("/login"), 3000);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Something went wrong");
+      } else {
+        setDone(true);
+        setTimeout(() => router.push("/login"), 3000);
+      }
+    } catch {
+      setError("Network error. Try again.");
     }
+    setLoading(false);
   };
 
   return (
@@ -55,30 +52,22 @@ export default function ResetPasswordPage() {
         <div className="text-center mb-4">
           <h2 className="fw-semibold">Set new password</h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-            {done ? "Password updated." : "Enter a new password for your account."}
+            {done ? "Password updated." : error && !done ? "" : "Enter a new password for your account."}
           </p>
         </div>
 
-        {error && (
-          <div className="alert alert-danger" style={{ fontSize: "0.9rem" }}>
-            {error}
-          </div>
-        )}
-
-        {!ready && !error ? (
-          <div className="text-center py-4">
-            <Spinner size="sm" style={{ color: "var(--brand)" }} />
-          </div>
-        ) : error && !done ? (
+        {error && !done && (
           <div className="text-center">
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", marginBottom: "20px" }}>
+            <div className="alert alert-danger" style={{ fontSize: "0.9rem" }}>
               {error}
-            </p>
+            </div>
             <Link href="/forgot-password" style={{ color: "var(--brand)", fontSize: "0.9rem" }}>
               Request a new reset link
             </Link>
           </div>
-        ) : done ? (
+        )}
+
+        {done && (
           <div className="text-center">
             <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
               Password updated successfully. Redirecting to sign in...
@@ -87,7 +76,9 @@ export default function ResetPasswordPage() {
               Sign in now
             </Link>
           </div>
-        ) : (
+        )}
+
+        {!error && !done && (
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>New Password</Form.Label>
@@ -123,5 +114,13 @@ export default function ResetPasswordPage() {
         )}
       </Container>
     </>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="d-flex justify-content-center min-vh-100"><Spinner style={{ color: "var(--brand)", marginTop: "100px" }} /></div>}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

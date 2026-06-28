@@ -21,7 +21,7 @@ export function routeModel(query: string, selectedModels: string[]): RouteResult
   const primary = selectedModels[0];
 
   // If user manually picked a specific model, respect it
-  if (selectedModels.length === 1 && primary !== "deepseek-chat") {
+  if (selectedModels.length === 1) {
     return getModelConfig(primary, q);
   }
 
@@ -61,17 +61,16 @@ function autoRoute(q: string): RouteResult {
 function getModelConfig(modelId: string, _q: string): RouteResult {
   switch (modelId) {
     case "claude-opus-4-6":
+    case "claude-opus-4-5":
       return { model: modelId, reason: "manual (opus)", systemPrompt: PROMPTS.creative, maxContextTokens: 8000 };
     case "claude-sonnet-4-6":
-      return { model: modelId, reason: "manual (sonnet)", systemPrompt: PROMPTS.general, maxContextTokens: 10000 };
-    case "deepseek-reasoner":
-      return { model: modelId, reason: "manual (reasoning)", systemPrompt: PROMPTS.reasoner, maxContextTokens: 4000 };
+    case "claude-sonnet-4-5":
+    case "claude-haiku-4-5":
+      return { model: modelId, reason: "manual (claude)", systemPrompt: PROMPTS.general, maxContextTokens: 10000 };
     case "deepseek-v4-pro":
       return { model: modelId, reason: "manual (pro)", systemPrompt: PROMPTS.general, maxContextTokens: 12000 };
     case "deepseek-v4-flash":
       return { model: modelId, reason: "manual (fast)", systemPrompt: PROMPTS.fast, maxContextTokens: 2000 };
-    case "deepseek-chat":
-      return { model: modelId, reason: "manual (legacy)", systemPrompt: PROMPTS.general, maxContextTokens: 2000 };
     default:
       return { model: modelId, reason: "manual", systemPrompt: PROMPTS.creative, maxContextTokens: 8000 };
   }

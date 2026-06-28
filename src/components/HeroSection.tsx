@@ -42,7 +42,7 @@ export default function HeroSection() {
               }}
             >
               <div style={{ color: "var(--text-muted)" }} className="mb-2">
-                $ curl https://api.dagrai.xyz/v1/chat/completions \
+                $ curl https://dagrai.xyz/v1/chat/completions \
               </div>
               <div style={{ color: "var(--text-muted)" }}>
                 &nbsp;&nbsp;-H &quot;Authorization: Bearer sk-...&quot; \
